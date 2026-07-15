@@ -142,7 +142,7 @@ def main() -> None:
         bottom_toolbar=_get_toolbar,
     )
 
-    print("oxidize interactive shell v0.2.0")
+    print("oxidize interactive shell v0.1.0")
     print("Type 'help' for commands, Ctrl-D to exit.\n")
 
     while True:

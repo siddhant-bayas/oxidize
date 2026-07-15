@@ -8,6 +8,7 @@ import click
 from rich.console import Console
 from rich.text import Text
 
+from oxidize.cli.commands.status import _walk
 from oxidize.core.repository import Repository, RepositoryNotFound
 from oxidize.diff.engine import LineOp, diff_lines
 
@@ -32,19 +33,64 @@ def cmd_diff(paths: tuple[str, ...], cached: bool) -> None:
 
 def _diff_working(repo: Repository, paths: tuple[str, ...]) -> None:
     indexed = {e.path: e for e in repo.index.entries()}
-    files = _resolve_paths(repo, paths, indexed)
+
+    if indexed:
+        files = _resolve_paths(repo, paths, indexed)
+        for rel in sorted(files):
+            entry = indexed.get(rel)
+            if entry is None:
+                continue
+            disk = repo.work_tree / rel
+            if not disk.exists():
+                console.print(f"[red]deleted: {rel}[/]")
+                continue
+            new_text = disk.read_text(errors="replace").replace("\r\n", "\n")
+            old_blob = repo.db.load_blob(entry.oid)
+            old_text = old_blob.data.decode(errors="replace").replace("\r\n", "\n")
+            if old_text == new_text:
+                continue
+            _print_diff(rel, old_text, new_text)
+        return
+
+    head = repo.refs.head()
+    if not head:
+        console.print("[dim]no commits yet[/]")
+        return
+
+    commit = repo.db.load_commit(head)
+    head_tree = repo.db.load_tree(commit.tree_oid)
+    head_files = {}
+    for te in head_tree:
+        head_files[te.name] = te
+
+    if paths:
+        files = set()
+        for raw in paths:
+            p = Path(raw).resolve()
+            if p.is_dir():
+                for f in p.rglob("*"):
+                    if f.is_file():
+                        rel = f.relative_to(repo.work_tree).as_posix()
+                        files.add(rel)
+            else:
+                files = {p.relative_to(repo.work_tree).as_posix()}
+    else:
+        files = set(head_files.keys())
+        for p in _walk(repo.work_tree):
+            rel = p.relative_to(repo.work_tree).as_posix()
+            files.add(rel)
 
     for rel in sorted(files):
-        entry = indexed.get(rel)
-        if entry is None:
-            continue
+        head_entry = head_files.get(rel)
         disk = repo.work_tree / rel
         if not disk.exists():
             console.print(f"[red]deleted: {rel}[/]")
             continue
-        new_text = disk.read_text(errors="replace")
-        old_blob = repo.db.load_blob(entry.oid)
-        old_text = old_blob.data.decode(errors="replace")
+        if head_entry is None:
+            continue
+        new_text = disk.read_text(errors="replace").replace("\r\n", "\n")
+        old_blob = repo.db.load_blob(head_entry.oid)
+        old_text = old_blob.data.decode(errors="replace").replace("\r\n", "\n")
         if old_text == new_text:
             continue
         _print_diff(rel, old_text, new_text)

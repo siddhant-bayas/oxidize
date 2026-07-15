@@ -31,7 +31,22 @@ PATTERNS: dict[str, str] = {
 
 _COMPILED = {name: re.compile(p) for name, p in PATTERNS.items()}
 
-_IGNORE_DIRS = {".oxidize", ".git", "__pycache__", "node_modules", ".venv", "venv"}
+_IGNORE_DIRS = {
+    ".oxidize",
+    ".git",
+    "__pycache__",
+    "node_modules",
+    ".venv",
+    "venv",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".egg-info",
+    "pyoxidize.egg-info",
+    "oxidize.egg-info",
+    "dist",
+    "build",
+}
 
 
 def scan_text(text: str, filepath: str = "<input>") -> list[dict[str, str | int]]:

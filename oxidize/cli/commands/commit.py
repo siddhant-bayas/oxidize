@@ -7,6 +7,7 @@ import click
 
 from oxidize.core.repository import Repository, RepositoryNotFound
 from oxidize.objects.types import Author, Commit, FileMode, Tree, TreeEntry
+from oxidize.undo.reverser import UndoManager
 
 
 def _build_tree(repo: Repository) -> Tree:
@@ -62,6 +63,7 @@ def cmd_commit(message: str, agent: str | None = None) -> None:
 
     parents: list[str] = []
     head = repo.refs.head()
+    prev_head = head
     if head:
         parents.append(head)
 
@@ -76,6 +78,9 @@ def cmd_commit(message: str, agent: str | None = None) -> None:
     repo.db.store_commit(commit)
     repo.refs.update_head(commit.oid)
     repo.index.clear()
+
+    undo_mgr = UndoManager(repo)
+    undo_mgr.record_commit(commit.oid, prev_head)
 
     short = commit.oid[:8]
     branch = repo.refs.current_branch() or "HEAD"
