@@ -1,6 +1,6 @@
 from pathlib import Path
-from oxide.storage.database import ObjectDatabase
-from oxide.objects.types import Blob, Tree, TreeEntry, FileMode, Author, Commit
+from oxidize.storage.database import ObjectDatabase
+from oxidize.objects.types import Tree, TreeEntry, FileMode, Author, Commit
 
 
 def test_store_and_load_blob(tmp_path: Path) -> None:

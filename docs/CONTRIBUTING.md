@@ -1,37 +1,44 @@
-# Contributing
+# contributing
 
-## Setup
+## setup
 
 ```bash
-git clone https://github.com/yourname/oxide
-cd oxide
+git clone https://github.com/siddhant-bayas/oxidize
+cd oxidize
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
-## Running Tests
+## running tests
 
 ```bash
 pytest
-pytest --cov=oxide --cov-report=term-missing
+pytest --cov=oxidize --cov-report=term-missing
 ```
 
-## Linting
+## linting
 
 ```bash
-ruff check oxide tests
-mypy oxide
+ruff check oxidize tests
+ruff format --check oxidize tests
+mypy oxidize
 ```
 
-## Architecture Principles
+## ci
 
-- No cross-module circular imports. Dependency order: `objects → storage → index → core → cli`
-- Each subsystem must be testable in isolation
-- `Repository` is the only shared context — don't use module-level globals
-- Keep CLI commands thin — logic belongs in `core` or the relevant subsystem
+pull requests run lint typecheck and tests on python 3.11 3.12 and 3.13
 
-## Adding a Command
+releases are published to pypi automatically via trusted publishing
 
-1. Create `oxide/cli/commands/your_cmd.py` with a Click command named `cmd_your_cmd`
-2. Import and register in `oxide/cli/main.py`
-3. Add integration tests in `tests/`
+## architecture principles
+
+- no cross-module circular imports dependency order objects -> storage -> index -> core -> cli
+- each subsystem must be testable in isolation
+- repository is the only shared context do not use module-level globals
+- keep cli commands thin logic belongs in core or the relevant subsystem
+
+## adding a command
+
+1. create oxidize/cli/commands/your_cmd.py with a click command named cmd_your_cmd
+2. import and register in oxidize/cli/main.py
+3. add integration tests in tests/

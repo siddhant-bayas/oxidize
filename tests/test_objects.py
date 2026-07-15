@@ -1,4 +1,4 @@
-from oxide.objects.types import Blob, Tree, TreeEntry, FileMode, Commit, Author
+from oxidize.objects.types import Blob, Tree, TreeEntry, FileMode, Commit, Author
 
 
 def test_blob_roundtrip() -> None:

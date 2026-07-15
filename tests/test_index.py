@@ -1,5 +1,5 @@
 from pathlib import Path
-from oxide.index.staging import Index
+from oxidize.index.staging import Index
 
 
 def test_add_and_retrieve(tmp_path: Path) -> None:
@@ -23,6 +23,7 @@ def test_persistence(tmp_path: Path) -> None:
 
 def test_stale_detection(tmp_path: Path) -> None:
     import time
+
     f = tmp_path / "a.py"
     f.write_text("old")
     idx = Index(tmp_path / "index.json")

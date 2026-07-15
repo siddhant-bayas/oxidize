@@ -14,4 +14,4 @@ MANIFEST
 htmlcov/
 .coverage
 coverage.xml
-*.oxide/
+*.oxidize/

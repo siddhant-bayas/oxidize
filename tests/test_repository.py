@@ -1,12 +1,12 @@
 from pathlib import Path
 import pytest
-from oxide.core.repository import Repository, RepositoryNotFound
+from oxidize.core.repository import Repository, RepositoryNotFound
 
 
 def test_init_creates_structure(tmp_path: Path) -> None:
-    repo = Repository.init(tmp_path)
-    assert (tmp_path / ".oxide" / "objects").is_dir()
-    assert (tmp_path / ".oxide" / "HEAD").exists()
+    Repository.init(tmp_path)
+    assert (tmp_path / ".oxidize" / "objects").is_dir()
+    assert (tmp_path / ".oxidize" / "HEAD").exists()
 
 
 def test_init_twice_raises(tmp_path: Path) -> None:

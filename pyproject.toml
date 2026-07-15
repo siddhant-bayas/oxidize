@@ -3,18 +3,27 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "oxide-vcs"
-version = "0.1.0"
-description = "A next-generation distributed version control system"
+name = "pyoxidize"
+version = "0.2.0"
+description = "a version control system with semantic awareness built-in undo and interactive shell"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
     "click>=8.1",
     "rich>=13.0",
+    "prompt_toolkit>=3.0",
+    "deepmerge>=1.1",
 ]
 
 [project.optional-dependencies]
+semantic = [
+    "py-tree-sitter>=0.21",
+    "tree-sitter-python>=0.21",
+]
+notebook = [
+    "nbformat>=5.9",
+]
 dev = [
     "pytest>=7.4",
     "pytest-cov>=4.1",
@@ -23,11 +32,12 @@ dev = [
 ]
 
 [project.scripts]
-oxide = "oxide.cli.main:cli"
+oxidize = "oxidize.cli.main:cli"
+oxi = "oxidize.cli.repl:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["oxide*"]
+include = ["oxidize*"]
 
 [tool.ruff]
 line-length = 100

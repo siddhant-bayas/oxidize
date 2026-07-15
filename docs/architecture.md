@@ -1,43 +1,79 @@
-# Architecture
+# architecture
 
-## Object Model
+## object model
 
-Oxide uses a content-addressable DAG identical in spirit to Git's, but with SHA-256.
+oxidize uses a content-addressable dag identical in spirit to git's but with sha-256
 
 ```
-Commit → Tree → Blob(s)
-  ↓
+commit -> tree -> blob(s)
+  |
 parents[]
 ```
 
-Every object is hashed as `sha256("type len\0" + data)`. This means identical content always produces identical OIDs regardless of when or where it was stored.
+every object is hashed as sha256("type len\0" + data) this means identical content always produces identical oids regardless of when or where it was stored
 
-## Storage
+## storage
 
-The default backend stores objects at `.oxide/objects/XX/YYYY...` where XX is the first two hex chars of the OID. Objects are zlib-compressed.
+the default backend stores objects at .oxidize/objects/xx/yyyy... where xx is the first two hex chars of the oid objects are zlib-compressed
 
-`StorageBackend` is an abstract class — swap in a database, S3, or in-memory backend by implementing three methods: `read`, `write`, `exists`.
+storagebackend is an abstract class -- swap in a database s3 or in-memory backend by implementing three methods read write exists
 
-## Index
+## index
 
-The staging area is a JSON file at `.oxide/index.json`. Each entry records the file path, OID, mode, size, and mtime. Staleness detection compares mtime and size against the current filesystem state — same heuristic Git uses for its cache invalidation.
+the staging area is a json file at .oxidize/index.json each entry records the file path oid mode size and mtime staleness detection compares mtime and size against the current filesystem state -- same heuristic git uses for its cache invalidation
 
-## Refs
+## refs
 
-References live as plain text files under `.oxide/refs/heads/`. HEAD is either a symref (`ref: refs/heads/main`) or a detached OID. This is identical to Git's ref layout and intentionally compatible.
+references live as plain text files under .oxidize/refs/heads/ head is either a symref (ref: refs/heads/main) or a detached oid this is identical to git's ref layout and intentionally compatible
 
-## Dependency Order
+## dependency order
 
 ```
-objects → storage → index → core → cli
+objects -> storage -> index -> core -> cli
 ```
 
-No layer imports from a layer above it. The CLI is a pure dispatch layer.
+no layer imports from a layer above it the cli is a pure dispatch layer
 
-## Future: Semantic Diffs
+## cli and interactive shell
 
-The `oxide/diff/` engine today does line-level Myers diff. The plan is to add an AST-aware layer that understands Python, JS, and Rust syntax trees so that `oxide diff` can say "function `foo` was renamed" rather than showing raw line changes.
+both `oxidize` and `oxi` are entry points that accept the same subcommands
 
-## Future: P2P Sync
+`oxidize` maps to the click group in cli/main.py
 
-`oxide push` and `oxide pull` will eventually operate over a direct peer protocol rather than requiring a central server. The object store's content-addressable nature makes sync straightforward: only transfer objects the peer doesn't have.
+`oxi` maps to cli/repl.py which checks sys.argv -- if arguments are present it delegates to the click group otherwise it launches the prompt_toolkit-based repl
+
+### repl features
+
+- tab completion for commands file paths and branch names
+- live status bar showing branch staged count and untracked count
+- command history persisted to ~/.oxidize_history
+- aliases s -> status c -> commit a -> add l -> log d -> diff
+
+## security secret scanning
+
+oxidize scan detects api keys tokens private keys and credentials using pattern matching runs automatically before commit when scan_on_commit = true patterns cover aws gcp azure github gitlab slack stripe openai anthropic and generic patterns
+
+## structured data merge
+
+for json yaml and toml files merge operates at the key level instead of text lines three-way merge base + ours + theirs conflicts only when both sides changed the same key
+
+## notebook support
+
+ipynb files are treated as structured documents not text blobs cell-level diffing automatic output stripping and execution count removal keep diffs clean
+
+## semantic diffs (experimental)
+
+uses tree-sitter to parse source code into asts then diffs at the entity level (functions classes methods) can track renames and moves across files
+
+## ai agent provenance
+
+commits can be tagged with agent metadata (--agent "claude-code") the provenance journal tracks which agent/tool/prompt produced each change
+
+## undo system
+
+every mutation writes to .oxidize/journal.json oxidize undo reverses the last operation oxidize redo re-applies it
+
+## workflows
+
+- ci.yml -- runs on push/PR to main lint (ruff) typecheck (mypy) tests (pytest) across python 3.11 3.12 3.13 then builds the package
+- pypi.yml -- triggers on github release publish builds and uploads to pypi via trusted publishing (oidc)

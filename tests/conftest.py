@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from oxide.core.repository import Repository
+from oxidize.core.repository import Repository
 
 
 @pytest.fixture
