@@ -5,7 +5,7 @@ a content-addressable, semantic-aware version control system -- built from scrat
 [![ci](https://github.com/siddhant-bayas/oxidize/actions/workflows/ci.yml/badge.svg)](https://github.com/siddhant-bayas/oxidize/actions/workflows/ci.yml)
 [![pypi](https://img.shields.io/pypi/v/pyoxidize)](https://pypi.org/project/pyoxidize/)
 [![python](https://img.shields.io/pypi/pyversions/pyoxidize)](https://pypi.org/project/pyoxidize/)
-[![size](https://img.shields.io/badge/pip-install%20size-~tiny-blue)](#install--dependencies)
+[![size](https://img.shields.io/badge/pip-install%20size-tiny-blue)](#install--dependencies)
 [![tests](https://img.shields.io/badge/tests-99%20passing-brightgreen)](#)
 
 ## install
