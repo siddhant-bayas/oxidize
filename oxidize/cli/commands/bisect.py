@@ -45,7 +45,9 @@ def cmd_bisect_start(good: str, bad: str) -> None:
         good_oid = repo.refs.read(good) or good
         bad_oid = repo.refs.read(bad) or bad
         state.start(good_oid, bad_oid)
-        click.echo(f"check out: {midpoint(repo, good_oid, bad_oid)} then run `oxidize bisect good` or `oxidize bisect bad`")
+        click.echo(
+            f"check out: {midpoint(repo, good_oid, bad_oid)} then run `oxidize bisect good` or `oxidize bisect bad`"
+        )
     else:
         click.echo("bisect armed; run `oxidize bisect bad HEAD`, then `oxidize bisect good <ref>`")
 

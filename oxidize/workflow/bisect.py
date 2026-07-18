@@ -57,7 +57,9 @@ def walk(repo: Repository, oid: str, depth: int = 0, max_depth: int = 8) -> list
     return _list_commits(repo, oid, set(), depth, max_depth)
 
 
-def _list_commits(repo: Repository, oid: str, seen: set[str], depth: int, max_depth: int) -> list[str]:
+def _list_commits(
+    repo: Repository, oid: str, seen: set[str], depth: int, max_depth: int
+) -> list[str]:
     if depth > max_depth or oid in seen:
         return []
     seen.add(oid)

@@ -72,12 +72,7 @@ def test_negation_pattern(tmp_repo: Repository) -> None:
 def test_comments_and_blanks_skipped(tmp_repo: Repository) -> None:
     _write_oxignore(
         tmp_repo,
-        "\n"
-        "# a comment\n"
-        "\n"
-        "   \n"
-        "*.tmp\n"
-        "# another\n",
+        "\n# a comment\n\n   \n*.tmp\n# another\n",
     )
     matcher = IgnoreMatcher.from_repo(tmp_repo)
     assert matcher.patterns() == ["*.tmp"]

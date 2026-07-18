@@ -25,7 +25,9 @@ _CONFLICT_PATTERN = [
 @click.option("--all", "resolve_all", is_flag=True, help="Resolve every file with conflict markers")
 @click.option("-t", "--theirs", "take_theirs", is_flag=True, help="Take theirs for every conflict")
 @click.option("-o", "--ours", "take_ours", is_flag=True, help="Take ours for every conflict")
-def cmd_resolve(paths: tuple[str, ...], resolve_all: bool, take_theirs: bool, take_ours: bool) -> None:
+def cmd_resolve(
+    paths: tuple[str, ...], resolve_all: bool, take_theirs: bool, take_ours: bool
+) -> None:
     """Interactively resolve merge conflicts."""
     try:
         repo = Repository.discover()
@@ -38,7 +40,17 @@ def cmd_resolve(paths: tuple[str, ...], resolve_all: bool, take_theirs: bool, ta
     targets: list[Path] = []
     if resolve_all:
         for p in repo.work_tree.rglob("*"):
-            if p.is_file() and p.suffix in {".txt", ".py", ".md", ".json", ".yml", ".yaml", ".toml", ".cfg", ".ini"}:
+            if p.is_file() and p.suffix in {
+                ".txt",
+                ".py",
+                ".md",
+                ".json",
+                ".yml",
+                ".yaml",
+                ".toml",
+                ".cfg",
+                ".ini",
+            }:
                 try:
                     text = p.read_text(encoding="utf-8", errors="replace")
                 except UnicodeDecodeError:
@@ -68,9 +80,7 @@ def _interactive(p: Path) -> None:
     text = p.read_text(encoding="utf-8")
     console.print(text)
 
-    choice = Prompt.ask(
-        "  resolve", choices=["ours", "theirs", "skip", "abort"], default="ours"
-    )
+    choice = Prompt.ask("  resolve", choices=["ours", "theirs", "skip", "abort"], default="ours")
     if choice == "abort":
         raise click.exceptions.Exit(1)
     if choice == "skip":

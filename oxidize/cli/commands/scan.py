@@ -14,7 +14,9 @@ console = Console()
 @click.command("scan")
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
 @click.option("--staged", is_flag=True, help="Scan only staged files")
-@click.option("--no-oxignore", "respect_ignore", is_flag=True, default=False, help="Skip .oxignore filtering")
+@click.option(
+    "--no-oxignore", "respect_ignore", is_flag=True, default=False, help="Skip .oxignore filtering"
+)
 def cmd_scan(paths: tuple[str, ...], staged: bool, respect_ignore: bool) -> None:
     """Scan for secrets and credentials (.oxignore rules apply)."""
     try:

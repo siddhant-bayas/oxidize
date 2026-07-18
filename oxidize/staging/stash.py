@@ -29,13 +29,15 @@ class Stash:
                 shutil.copy2(src, blob_target)
             except OSError:
                 pass
-            index.append({
-                "path": entry.path,
-                "oid": entry.oid,
-                "mode": entry.mode,
-                "size": entry.size,
-                "mtime": entry.mtime,
-            })
+            index.append(
+                {
+                    "path": entry.path,
+                    "oid": entry.oid,
+                    "mode": entry.mode,
+                    "size": entry.size,
+                    "mtime": entry.mtime,
+                }
+            )
 
         meta = {
             "name": name,
@@ -69,6 +71,7 @@ class Stash:
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
             from oxidize.index.staging import IndexEntry
+
             repo.index._entries[entry["path"]] = IndexEntry(
                 path=entry["path"],
                 oid=entry["oid"],

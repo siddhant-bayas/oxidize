@@ -36,6 +36,7 @@ def test_stash_save_list_pop(in_repo: Repository) -> None:
     assert res_save.exit_code == 0, res_save.output
 
     import json as _json
+
     raw = _json.loads(repo.index._path.read_text())
     assert all(e["path"] != "a.txt" for e in raw), raw
 
@@ -58,7 +59,7 @@ def test_hooks_run_returns_exit_code(in_repo: Repository) -> None:
     repo = in_repo
     repo.oxidize_dir.joinpath("hooks").mkdir(parents=True, exist_ok=True)
     fail_path = repo.oxidize_dir / "hooks" / "post-commit.py"
-    fail_path.write_text('import sys; sys.exit(7)\n')
+    fail_path.write_text("import sys; sys.exit(7)\n")
     res = CliRunner().invoke(
         cli,
         ["hooks", "run", "post-commit"],

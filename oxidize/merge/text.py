@@ -35,15 +35,7 @@ def three_way_text_merge(base: str, ours: str, theirs: str) -> TextMergeResult:
     if ours.endswith("\n") != theirs.endswith("\n"):
         suffix = "\n" if ours.endswith("\n") or theirs.endswith("\n") else ""
 
-    merged = (
-        "<<<<<<< OURS\n"
-        f"{ours}"
-        "||||||| BASE\n"
-        f"{base}"
-        "======= THEIRS\n"
-        f"{theirs}"
-        ">>>>>>> THEIRS\n"
-    )
+    merged = f"<<<<<<< OURS\n{ours}||||||| BASE\n{base}======= THEIRS\n{theirs}>>>>>>> THEIRS\n"
     if suffix:
         merged = merged.rstrip("\n") + suffix
     return TextMergeResult(merged, True)

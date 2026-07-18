@@ -53,7 +53,9 @@ class Remote:
             (target_resolved / ".oxidize" / "refs" / "heads" / current).write_text(oid + "\n")
         return repo
 
-    def push(self, repo: Repository, branch: str | None = None, *, force: bool = False) -> list[str]:
+    def push(
+        self, repo: Repository, branch: str | None = None, *, force: bool = False
+    ) -> list[str]:
         bare = self.ensure_bare()
         branches = [branch] if branch else repo.refs.list_branches()
         pushed: list[str] = []
@@ -101,7 +103,9 @@ class Remote:
         return pulled
 
 
-def _copy_objects(src_root: Path, dst_root: Path, *, stop: str | None = None, repo: Repository | None = None) -> None:
+def _copy_objects(
+    src_root: Path, dst_root: Path, *, stop: str | None = None, repo: Repository | None = None
+) -> None:
     src_objects = src_root / "objects"
     dst_objects = dst_root
     if not src_objects.exists():

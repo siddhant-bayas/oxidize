@@ -74,9 +74,7 @@ def _is_dirty(path: Path, root: Path) -> bool:
 
 
 def _staged_or_untracked(repo: Repository) -> bool:
-    return bool(repo.index.entries()) or any(
-        p.is_file() for p in repo.work_tree.rglob("*")
-    )
+    return bool(repo.index.entries()) or any(p.is_file() for p in repo.work_tree.rglob("*"))
 
 
 def _write_tree(repo: Repository, tree: Tree, root: Path) -> None:

@@ -55,6 +55,7 @@ def _build_tree_with(repo: Repository, files: dict[str, str]) -> str:
     """
     from collections import defaultdict
     from oxidize.objects.types import Tree, TreeEntry, FileMode
+
     entries_by_dir: dict[str, list[tuple[str, str]]] = defaultdict(list)
     for path, content in files.items():
         full = repo.work_tree / path
@@ -82,10 +83,15 @@ def _build_tree_with(repo: Repository, files: dict[str, str]) -> str:
     return str(root.oid)
 
 
-def _commit_with_tree(repo: Repository, tree_oid: str, msg: str, parent: list[str] | None = None) -> str:
+def _commit_with_tree(
+    repo: Repository, tree_oid: str, msg: str, parent: list[str] | None = None
+) -> str:
     from oxidize.objects.types import Author, Commit
+
     author = Author(name="tester", email="tester@oxide.dev", timestamp=1700000000)
-    c = Commit(tree_oid=tree_oid, author=author, committer=author, message=msg, parents=parent or [])
+    c = Commit(
+        tree_oid=tree_oid, author=author, committer=author, message=msg, parents=parent or []
+    )
     repo.db.store_commit(c)
     return c.oid
 
@@ -143,14 +149,23 @@ def test_notebook_diff_render(tmp_path: Path) -> None:
     (nb_dir / "b.ipynb").write_text(json.dumps(_payload("print('hello')\n", code=True)))
     runner = CliRunner()
     with runner.isolated_filesystem():
-        res = runner.invoke(cli, ["notebook-diff", str(nb_dir / "a.ipynb"), str(nb_dir / "b.ipynb")], catch_exceptions=True)
+        res = runner.invoke(
+            cli,
+            ["notebook-diff", str(nb_dir / "a.ipynb"), str(nb_dir / "b.ipynb")],
+            catch_exceptions=True,
+        )
     assert res.exit_code in (0, 1)
 
 
 def _payload(source: str, *, code: bool = False) -> dict[str, object]:
     return {
         "cells": [
-            {"cell_type": "code" if code else "markdown", "source": source, "metadata": {}, "outputs": []}
+            {
+                "cell_type": "code" if code else "markdown",
+                "source": source,
+                "metadata": {},
+                "outputs": [],
+            }
         ],
         "metadata": {},
         "nbformat": 4,

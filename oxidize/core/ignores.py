@@ -57,9 +57,7 @@ class IgnoreMatcher:
         self._work_tree = work_tree
         self._patterns = list(patterns)
         self._user_spec: Any = pathspec.PathSpec.from_lines("gitignore", patterns)
-        self._builtin_spec: Any = pathspec.PathSpec.from_lines(
-            "gitignore", _BUILTIN_PATTERNS
-        )
+        self._builtin_spec: Any = pathspec.PathSpec.from_lines("gitignore", _BUILTIN_PATTERNS)
 
     @classmethod
     def from_repo(cls, repo: Repository) -> IgnoreMatcher:

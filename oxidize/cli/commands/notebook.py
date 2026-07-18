@@ -41,7 +41,9 @@ def cmd_notebook_diff(old: str, new: str, render: bool) -> None:
             kind = d["type"]
             summary = diff_summary[cell_key]
             kind_key = str(d["type"])
-            color = {"added": "green", "deleted": "red", "modified": "yellow", "unchanged": "dim"}[kind_key]
+            color = {"added": "green", "deleted": "red", "modified": "yellow", "unchanged": "dim"}[
+                kind_key
+            ]
             console.print(f"  [bold]cell {cell_no}[/] [{color}]{kind}[/]")
             if kind == "modified":
                 console.print(f"    [yellow]{summary}[/]")

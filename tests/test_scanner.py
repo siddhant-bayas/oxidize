@@ -82,6 +82,7 @@ def test_scan_directory_respects_ignore(tmp_path: Path) -> None:
     (tmp_path / ".oxignore").write_text("*.env\n")
 
     from oxidize.core.ignores import IgnoreMatcher
+
     lines = [
         ln.strip()
         for ln in (tmp_path / ".oxignore").read_text().splitlines()

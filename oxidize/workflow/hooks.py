@@ -60,14 +60,21 @@ class Hooks:
             pass
         return path
 
-    def run(self, name: str, args: Iterable[str] = (), env: dict[str, str] | None = None) -> HookResult:
+    def run(
+        self, name: str, args: Iterable[str] = (), env: dict[str, str] | None = None
+    ) -> HookResult:
         hooks_dir = self._dir
         path = find_hook_file(hooks_dir, name)
         if path is None:
             return HookResult(name=name, exit_code=0, stdout="", stderr="")
         cmd, _exe = _select_runner(path)
         if cmd is None:
-            return HookResult(name=name, exit_code=126, stdout="", stderr="hook script not executable on this platform")
+            return HookResult(
+                name=name,
+                exit_code=126,
+                stdout="",
+                stderr="hook script not executable on this platform",
+            )
         try:
             proc = subprocess.run(
                 cmd,
@@ -92,6 +99,7 @@ class Hooks:
 def _select_runner(path: Path) -> tuple[list[str] | None, str]:
     import os
     import sys
+
     suffix = path.suffix.lower()
     if suffix == ".py":
         return [sys.executable, str(path)], "python"
@@ -102,7 +110,9 @@ def _select_runner(path: Path) -> tuple[list[str] | None, str]:
     return [str(path)], "shell"
 
 
-def run_hooks(repo: Repository, name: str, args: Iterable[str] = (), *, blocking: bool = True) -> list[HookResult]:
+def run_hooks(
+    repo: Repository, name: str, args: Iterable[str] = (), *, blocking: bool = True
+) -> list[HookResult]:
     h = Hooks(repo)
     if find_hook_file(h._dir, name) is None:
         return []

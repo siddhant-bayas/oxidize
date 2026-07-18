@@ -13,7 +13,9 @@ console = Console()
 
 @click.command("merge")
 @click.argument("branch")
-@click.option("--no-commit", is_flag=True, help="Leave conflicts in the working tree without committing")
+@click.option(
+    "--no-commit", is_flag=True, help="Leave conflicts in the working tree without committing"
+)
 def cmd_merge(branch: str, no_commit: bool) -> None:
     """Merge a branch into the current branch."""
     try:
