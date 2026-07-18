@@ -52,3 +52,19 @@ class RefStore:
         if not branches_dir.exists():
             return []
         return [p.name for p in branches_dir.iterdir() if p.is_file()]
+
+    def list_tags(self) -> list[str]:
+        tags_dir = self._root / "refs" / "tags"
+        if not tags_dir.exists():
+            return []
+        return [p.name for p in tags_dir.iterdir() if p.is_file()]
+
+    def exists(self, name: str) -> bool:
+        return self._ref_path(name).exists()
+
+    def delete(self, name: str) -> bool:
+        path = self._ref_path(name)
+        if path.exists():
+            path.unlink()
+            return True
+        return False
