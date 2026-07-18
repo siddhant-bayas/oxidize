@@ -5,33 +5,20 @@ from pathlib import Path
 import click
 from rich.console import Console
 
+from oxidize.core.ignores import IgnoreMatcher
 from oxidize.core.repository import Repository, RepositoryNotFound
 
 console = Console()
 
-_IGNORE = {
-    ".oxidize",
-    ".git",
-    "__pycache__",
-    ".DS_Store",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".egg-info",
-    "pyoxidize.egg-info",
-    "oxidize.egg-info",
-    "dist",
-    "build",
-    "src",
-}
 
-
-def _walk(root: Path) -> list[Path]:
+def _walk(root: Path, matcher: "IgnoreMatcher") -> list[Path]:
     result = []
     for p in sorted(root.rglob("*")):
-        if any(part in _IGNORE for part in p.parts):
+        try:
+            rel = p.relative_to(root).as_posix()
+        except ValueError:
             continue
-        if p.is_file():
+        if p.is_file() and not matcher.is_ignored(rel):
             result.append(p)
     return result
 
@@ -52,7 +39,7 @@ def cmd_status() -> None:
     untracked: list[str] = []
 
     indexed_paths = {ie.path for ie in repo.index.entries()}
-    disk_files = _walk(repo.work_tree)
+    disk_files = _walk(repo.work_tree, repo.ignore_matcher)
 
     head_tree_names: set[str] = set()
     head = repo.refs.head()
