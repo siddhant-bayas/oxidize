@@ -80,7 +80,7 @@ oxidize scan config.py --staged
 
 ## ignored directories
 
-the scanner automatically skips these directories:
+the scanner automatically skips these directories (hardcoded; cannot be un-ignored):
 
 - `.oxidize/`
 - `.git/`
@@ -88,6 +88,14 @@ the scanner automatically skips these directories:
 - `node_modules/`
 - `.venv/`
 - `venv/`
+- `.mypy_cache/`
+- `.pytest_cache/`
+- `.ruff_cache/`
+- `*.egg-info/`
+- `dist/`
+- `build/`
+
+in addition, `oxidize scan` **respects `.oxignore`** by default: any path that `oxidize add` would skip is also skipped here. pass `--no-oxignore` to disable the rule for a single invocation (e.g. for a one-off security audit).
 
 ## output format
 
@@ -104,7 +112,8 @@ format: `[type] [file]:[line] -- [matched text]`
 
 ```python
 from pathlib import Path
-from oxidize.security.scanner import scan_text, scan_file, scan_directory
+from oxidize.security.scanner import scan_text, scan_file, scan_directory, scan_paths
+from oxidize.core.ignores import IgnoreMatcher
 
 # scan a string
 results = scan_text("api_key = 'ghp_ABCDEF1234567890'", "config.py")
@@ -114,8 +123,12 @@ for r in results:
 # scan a single file
 results = scan_file(Path("config.py"), Path("."))
 
-# scan entire directory
-results = scan_directory(Path("."))
+# scan entire directory, respecting .oxignore
+matcher = IgnoreMatcher.from_repo(...)  # any Repository-like object
+results = scan_directory(Path("."), matcher)
+
+# scan a specific list of paths
+results = scan_paths([Path("src/"), Path("config.py")], Path("."), matcher)
 ```
 
 each result is a dict with keys:
