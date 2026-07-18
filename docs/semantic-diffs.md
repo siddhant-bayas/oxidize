@@ -10,7 +10,7 @@ install the semantic extras:
 pip install "pyoxidize[semantic]"
 ```
 
-this installs `py-tree-sitter` and `tree-sitter-python`.
+this installs `tree-sitter` and `tree-sitter-python`.
 
 ## how it works
 

@@ -24,7 +24,7 @@ pip install "pyoxidize[semantic,notebook,dev]"
 
 | extra | packages installed | purpose |
 |-------|-------------------|---------|
-| `semantic` | `py-tree-sitter>=0.21`, `tree-sitter-python>=0.21` | AST parsing for semantic diffs that understand renames |
+| `semantic` | `tree-sitter>=0.21`, `tree-sitter-python>=0.21` | AST parsing for semantic diffs that understand renames |
 | `notebook` | `nbformat>=5.9` | Parse and diff `.ipynb` files at the cell level |
 | `dev` | `pytest>=7.4`, `pytest-cov>=4.1`, `mypy>=1.5`, `ruff>=0.1` | linting, type checking, testing |
 

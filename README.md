@@ -57,7 +57,7 @@ oxidize is **not** a git replacement for big teams or monorepos. it's a focused,
 | ai-agent detection env-var coverage | stable | v0.1.0 |
 | blame (line-level) | stable | v0.1.0 |
 | remote sync (filesystem only) | alpha | v0.1.0 |
-| semantic AST diffs (`py-tree-sitter`) | experimental | v0.1.0 |
+| semantic AST diffs (`tree-sitter`) | experimental | v0.1.0 |
 | ai-agent prose locking + qa | experimental | (planning) |
 | network remotes (http, ssh) | not yet | -- |
 | LFS-style large-file extension | not yet | -- |
