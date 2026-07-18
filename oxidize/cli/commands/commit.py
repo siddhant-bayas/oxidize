@@ -80,7 +80,7 @@ def cmd_commit(message: str, agent: str | None = None) -> None:
     repo.index.clear()
 
     undo_mgr = UndoManager(repo)
-    undo_mgr.record_commit(commit.oid, prev_head)
+    undo_mgr.record_commit(commit.oid, prev_head, message)
 
     short = commit.oid[:8]
     branch = repo.refs.current_branch() or "HEAD"
