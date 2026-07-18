@@ -2,6 +2,11 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from oxidize.core.ignores import IgnoreMatcher
+
 
 PATTERNS: dict[str, str] = {
     "AWS Access Key": r"AKIA[0-9A-Z]{16}",
@@ -61,7 +66,9 @@ def scan_text(text: str, filepath: str = "<input>") -> list[dict[str, str | int]
     return findings
 
 
-def scan_file(path: Path, root: Path) -> list[dict[str, str | int]]:
+def scan_file(path: Path, root: Path, *, is_ignored: bool = False) -> list[dict[str, str | int]]:
+    if is_ignored:
+        return []
     try:
         text = path.read_text(errors="replace")
     except (OSError, PermissionError):
@@ -70,11 +77,43 @@ def scan_file(path: Path, root: Path) -> list[dict[str, str | int]]:
     return scan_text(text, rel)
 
 
-def scan_directory(root: Path) -> list[dict[str, str | int]]:
+def scan_directory(
+    root: Path,
+    ignore_matcher: "IgnoreMatcher | None" = None,
+) -> list[dict[str, str | int]]:
     findings: list[dict[str, str | int]] = []
     for p in sorted(root.rglob("*")):
         if any(part in _IGNORE_DIRS for part in p.parts):
             continue
-        if p.is_file():
+        if not p.is_file():
+            continue
+        try:
+            rel = p.relative_to(root).as_posix()
+        except ValueError:
+            rel = p.as_posix()
+        if ignore_matcher is not None and ignore_matcher.is_ignored(rel):
+            continue
+        findings.extend(scan_file(p, root))
+    return findings
+
+
+def scan_paths(
+    paths: list[Path],
+    root: Path,
+    ignore_matcher: "IgnoreMatcher | None" = None,
+) -> list[dict[str, str | int]]:
+    findings: list[dict[str, str | int]] = []
+    for p in paths:
+        if not p.exists():
+            continue
+        try:
+            rel = p.relative_to(root).as_posix()
+        except ValueError:
+            rel = p.as_posix()
+        if ignore_matcher is not None and ignore_matcher.is_ignored(rel):
+            continue
+        if p.is_dir():
+            findings.extend(scan_directory(p, ignore_matcher))
+        else:
             findings.extend(scan_file(p, root))
     return findings
