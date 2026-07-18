@@ -8,7 +8,6 @@ import click
 from rich.console import Console
 from rich.text import Text
 
-from oxidize.cli.commands.status import _walk
 from oxidize.core.repository import Repository, RepositoryNotFound
 from oxidize.diff.engine import LineOp, diff_lines
 
@@ -76,9 +75,10 @@ def _diff_working(repo: Repository, paths: tuple[str, ...]) -> None:
                 files = {p.relative_to(repo.work_tree).as_posix()}
     else:
         files = set(head_files.keys())
-        for p in _walk(repo.work_tree):
-            rel = p.relative_to(repo.work_tree).as_posix()
-            files.add(rel)
+        for p in repo.ignore_matcher.filter([*repo.work_tree.rglob("*")]):
+            if p.is_file():
+                rel = p.relative_to(repo.work_tree).as_posix()
+                files.add(rel)
 
     for rel in sorted(files):
         head_entry = head_files.get(rel)
