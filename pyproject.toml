@@ -14,6 +14,7 @@ dependencies = [
     "rich>=13.0",
     "prompt_toolkit>=3.0",
     "deepmerge>=1.1",
+    "pathspec>=0.11",
 ]
 
 [project.optional-dependencies]
@@ -44,9 +45,10 @@ line-length = 100
 target-version = "py311"
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 ignore_missing_imports = true
+files = ["oxidize", "tests"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
