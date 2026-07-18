@@ -20,10 +20,10 @@ class UndoManager:
             undo_data={"paths": paths},
         )
 
-    def record_commit(self, commit_oid: str, prev_head: str | None) -> None:
+    def record_commit(self, commit_oid: str, prev_head: str | None, message: str = "") -> None:
         self._journal.record(
             op=OpType.COMMIT,
-            data={"commit_oid": commit_oid, "prev_head": prev_head},
+            data={"commit_oid": commit_oid, "prev_head": prev_head, "message": message},
             undo_data={"commit_oid": commit_oid, "restore_to": prev_head},
         )
 
