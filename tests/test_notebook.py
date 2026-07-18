@@ -7,7 +7,7 @@ from pathlib import Path
 from oxidize.notebook.differ import NotebookDiffer, NotebookReader, strip_outputs
 
 
-def _make_notebook(cells: list[dict]) -> dict:
+def _make_notebook(cells: list[dict[str, object]]) -> dict[str, object]:
     return {
         "nbformat": 4,
         "nbformat_minor": 5,
@@ -16,7 +16,7 @@ def _make_notebook(cells: list[dict]) -> dict:
     }
 
 
-def _make_code_cell(source: str) -> dict:
+def _make_code_cell(source: str) -> dict[str, object]:
     return {
         "cell_type": "code",
         "metadata": {},
@@ -26,7 +26,7 @@ def _make_code_cell(source: str) -> dict:
     }
 
 
-def _make_md_cell(source: str) -> dict:
+def _make_md_cell(source: str) -> dict[str, object]:
     return {
         "cell_type": "markdown",
         "metadata": {},
