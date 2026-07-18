@@ -32,6 +32,7 @@ oxidize init [PATH]
 - creates `objects/`, `refs/heads/`, `refs/tags/` subdirectories
 - writes `HEAD` pointing to `refs/heads/main`
 - initializes empty `index.json`
+- writes a starter `.oxignore` with Python-appropriate defaults (only if no `.oxignore` already exists)
 
 **errors:**
 - `FileExistsError` if `.oxidize/` already exists at the target path
@@ -50,19 +51,21 @@ oxidize init /path/to/project     # init at absolute path
 stage files for the next commit.
 
 ```
-oxidize add <PATHS...>
+oxidize add [OPTIONS] <PATHS...>
 ```
 
-| argument | required | description |
-|----------|----------|-------------|
+| argument/flag | required | description |
+|---------------|----------|-------------|
 | `PATHS` | yes (one or more) | file or directory paths to stage (must exist) |
+| `-f`, `--force` | no | bypass `.oxignore` rules for this invocation |
 
 **what it does:**
 - reads each file from disk
 - computes SHA-256 hash, stores as a blob object (zlib-compressed)
 - records the entry in the staging index with path, oid, mode, size, and mtime
 - if a directory is given, recursively adds all files inside it
-- prints `staged: <path>` for each file
+- files matching `.oxignore` patterns are skipped (printed as `ignored: <path>`)
+- prints `staged: <path>` for each staged file
 
 **examples:**
 ```bash
@@ -70,12 +73,14 @@ oxidize add main.py              # stage a single file
 oxidize add main.py utils.py     # stage multiple files
 oxidize add src/                 # stage all files in src/ recursively
 oxidize add .                    # stage everything in the working tree
+oxidize add -f .env.local        # stage an ignored file anyway
 ```
 
 **notes:**
 - files that don't exist will cause an error
 - directories are traversed recursively
 - each file gets its own blob object with a unique oid
+- `.git/` and `.oxidize/` are always ignored (cannot be un-ignored)
 
 ---
 
@@ -97,6 +102,7 @@ oxidize status
 | staged | green | files in the index (ready to commit) |
 | modified | yellow | files on disk that differ from their staged version |
 | untracked | dim | files on disk not in the index |
+| (ignored) | -- | files matching `.oxignore` patterns are never shown |
 
 **staleness detection:**
 uses mtime + size comparison (same heuristic as git's cache invalidation) to detect modifications without re-hashing files.
@@ -115,6 +121,50 @@ modified:
 untracked:
   notes.txt
 ```
+
+---
+
+## oxidize ignores
+
+inspect and test `.oxignore` rules.
+
+```
+oxidize ignores SUBCOMMAND
+```
+
+### subcommands
+
+| subcommand | description |
+|------------|-------------|
+| `oxidize ignores list` | print every effective pattern (builtins first, then `.oxignore`) |
+| `oxidize ignores check <PATHS...>` | test paths; exits `0` if all tracked, `1` if any ignored |
+
+**ignores list output:**
+```
+builtins (always active):
+  .git/
+  .oxidize/
+
+.oxignore patterns:
+  __pycache__/
+  *.pyc
+  .env
+```
+
+**ignores check output:**
+```
+  main.py: tracked
+  secret.env: ignored
+```
+
+**examples:**
+```bash
+oxidize ignores list                    # show rules
+oxidize ignores check .env              # what would happen to `.env`?
+oxidize ignores check src/ config.json  # check multiple paths
+```
+
+**see also:** [Ignores](ignores.md) for the full pattern grammar.
 
 ---
 
@@ -232,7 +282,7 @@ oxidize diff --cached main.py   # diff specific staged file
 
 ## oxidize scan
 
-scan for secrets and credentials.
+scan for secrets and credentials (respects `.oxignore`).
 
 ```
 oxidize scan [OPTIONS] [PATHS...]
@@ -242,6 +292,7 @@ oxidize scan [OPTIONS] [PATHS...]
 |---------------|----------|---------|-------------|
 | `PATHS` | no | entire working directory | files or directories to scan |
 | `--staged` | no | `false` | scan only files currently in the staging index |
+| `--no-oxignore` | no | `false` | bypass `.oxignore` rules for this invocation (you should rarely need this) |
 
 **what it detects (21 patterns):**
 
@@ -256,8 +307,10 @@ oxidize scan [OPTIONS] [PATHS...]
 | generic | API Key, Private Key Block (RSA/EC/DSA/OPENSSH), JWT Token, Bearer Token, Generic Password |
 | database | Connection String (postgres, mysql, mongodb, redis, amqp) |
 
-**ignored directories:**
-`.oxidize/`, `.git/`, `__pycache__/`, `node_modules/`, `.venv/`, `venv/`
+**ignore rules:**
+- the working directory has a hardcoded skip-list (`.oxidize/`, `.git/`, `__pycache__/`, `node_modules/`, `.venv/`, `venv/`, `.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`, `*.egg-info/`, `dist/`, `build/`)
+- **then** `.oxignore` filters further (the same patterns that `add`/`status` skip apply here too)
+- pass `--no-oxignore` to scan *every* file regardless of `.oxignore` rules (useful for audits)
 
 **output format:**
 ```
@@ -270,6 +323,7 @@ oxidize scan                     # scan entire working directory
 oxidize scan main.py             # scan specific file
 oxidize scan src/ lib/           # scan multiple paths
 oxidize scan --staged            # scan only staged files
+oxidize scan --no-oxignore       # audit everything; ignore .oxignore
 ```
 
 **when secrets are found:**
