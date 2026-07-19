@@ -139,6 +139,8 @@ def _extract_tree_sitter(source: str) -> list[Entity] | None:
 def _extract_regex(source: str) -> list[Entity]:
     entities: list[Entity] = []
     lines = source.split("\n")
+    _DEF_RE = re.compile(r"(?:async\s+)?def\s+(\w+)\s*\(")
+    _CLASS_RE = re.compile(r"class\s+(\w+)")
 
     i = 0
     while i < len(lines):
@@ -146,61 +148,57 @@ def _extract_regex(source: str) -> list[Entity]:
         stripped = line.lstrip()
         indent = len(line) - len(stripped)
 
-        if stripped.startswith("def ") or stripped.startswith("@"):
-            if stripped.startswith("@"):
-                i += 1
-                if i >= len(lines):
-                    break
-                stripped = lines[i].lstrip()
-                indent = len(lines[i]) - len(stripped)
-            if stripped.startswith("def "):
-                match = re.match(r"def\s+(\w+)\s*\(", stripped)
-                if match:
-                    name = match.group(1)
-                    body_lines, end = _extract_body(lines, i + 1, indent + 4)
-                    body = "\n".join(body_lines)
-                    h = hashlib.sha256(body.encode()).hexdigest()[:16]
-                    ent_type = EntityType.METHOD if _is_indented(indent) else EntityType.FUNCTION
-                    parent = (
-                        _find_enclosing_class(entities) if ent_type == EntityType.METHOD else ""
-                    )
-                    qualified = f"{parent}.{name}" if parent else name
-                    entities.append(
-                        Entity(
-                            name=name,
-                            qualified_name=qualified,
-                            entity_type=ent_type,
-                            parent_class=parent,
-                            start_line=i + 1,
-                            end_line=end + 1,
-                            body_hash=h,
-                            source=body,
-                        )
-                    )
-                    i = end + 1
-                    continue
+        if stripped.startswith("@"):
+            i += 1
+            if i >= len(lines):
+                break
+            stripped = lines[i].lstrip()
+            indent = len(lines[i]) - len(stripped)
 
-        elif stripped.startswith("class "):
-            match = re.match(r"class\s+(\w+)", stripped)
-            if match:
-                name = match.group(1)
-                body_lines, end = _extract_body(lines, i + 1, indent + 4)
-                body = "\n".join(body_lines)
-                h = hashlib.sha256(body.encode()).hexdigest()[:16]
-                entities.append(
-                    Entity(
-                        name=name,
-                        qualified_name=name,
-                        entity_type=EntityType.CLASS,
-                        parent_class="",
-                        start_line=i + 1,
-                        end_line=end + 1,
-                        body_hash=h,
-                        source=body,
-                    )
+        def_match = _DEF_RE.match(stripped)
+        if def_match:
+            name = def_match.group(1)
+            body_lines, end = _extract_body(lines, i + 1, indent + 4)
+            body = "\n".join(body_lines)
+            h = hashlib.sha256(body.encode()).hexdigest()[:16]
+            ent_type = EntityType.METHOD if _is_indented(indent) else EntityType.FUNCTION
+            parent = _find_enclosing_class(entities) if ent_type == EntityType.METHOD else ""
+            qualified = f"{parent}.{name}" if parent else name
+            entities.append(
+                Entity(
+                    name=name,
+                    qualified_name=qualified,
+                    entity_type=ent_type,
+                    parent_class=parent,
+                    start_line=i + 1,
+                    end_line=end + 1,
+                    body_hash=h,
+                    source=body,
                 )
-                i = end + 1
-                continue
+            )
+            i = end + 1
+            continue
+
+        class_match = _CLASS_RE.match(stripped)
+        if class_match:
+            name = class_match.group(1)
+            body_lines, end = _extract_body(lines, i + 1, indent + 4)
+            body = "\n".join(body_lines)
+            h = hashlib.sha256(body.encode()).hexdigest()[:16]
+            entities.append(
+                Entity(
+                    name=name,
+                    qualified_name=name,
+                    entity_type=EntityType.CLASS,
+                    parent_class="",
+                    start_line=i + 1,
+                    end_line=end + 1,
+                    body_hash=h,
+                    source=body,
+                )
+            )
+            i += 1
+            continue
 
         i += 1
 
