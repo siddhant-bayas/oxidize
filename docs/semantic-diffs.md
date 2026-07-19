@@ -116,8 +116,11 @@ class Bar:
 entities = extract_entities(source)
 snapshot = EntitySnapshot(entities)
 
-# lookup by name
+# lookup by bare name
 foo = snapshot.by_name()["foo"]
+
+# lookup by qualified name (handles cross-class collisions)
+bar_baz = snapshot.by_qualified_name()["Bar.baz"]
 
 # lookup by structural hash (find all entities with same body)
 by_hash = snapshot.by_hash()
@@ -127,8 +130,10 @@ by_hash = snapshot.by_hash()
 
 | field | type | description |
 |-------|------|-------------|
-| `name` | `str` | function/class/method name |
+| `name` | `str` | function/class/method bare name |
+| `qualified_name` | `str` | e.g. `Dog.save` or `greet` |
 | `entity_type` | `EntityType` | function, class, method, or assignment |
+| `parent_class` | `str` | enclosing class name, or empty string |
 | `start_line` | `int` | first line number (1-indexed) |
 | `end_line` | `int` | last line number |
 | `body_hash` | `str` | SHA-256 of body (truncated to 16 hex chars) |
@@ -137,7 +142,6 @@ by_hash = snapshot.by_hash()
 ## limitations
 
 - currently only supports Python source files
-- uses regex-based extraction (not full AST parsing) for the entity extraction
-- tree-sitter integration is available via the `semantic` extras for more robust parsing
-- does not track imports, decorators, or module-level variables
+- when `tree-sitter` is installed (via `pip install "pyoxidize[semantic]"`), parsing uses the full AST; falls back to regex-based extraction otherwise
+- does not track imports or module-level variables
 - assignment detection is present but not fully integrated into the diff
