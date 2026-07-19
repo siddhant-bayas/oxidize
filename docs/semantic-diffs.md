@@ -1,4 +1,4 @@
-# semantic diffs (experimental)
+# semantic diffs (alpha)
 
 semantic diffs understand your code's structure. instead of comparing text line-by-line, they parse your source code into an AST and compare functions, classes, and methods.
 
@@ -14,9 +14,9 @@ this installs `tree-sitter` and `tree-sitter-python`.
 
 ## how it works
 
-1. **extract entities** -- parse Python source code to identify functions, classes, and methods
+1. **extract entities** -- parse Python source code with `tree-sitter` (or fall back to a regex parser) to identify functions, classes, and methods
 2. **compute structural hashes** -- hash each entity's body to detect changes
-3. **compare** -- match entities by name and structural hash
+3. **compare** -- match entities by qualified name and structural hash
 4. **detect renames** -- if two entities have the same body hash but different names, it's a rename
 
 ## entity types
