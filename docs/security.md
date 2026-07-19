@@ -97,6 +97,16 @@ the scanner automatically skips these directories (hardcoded; cannot be un-ignor
 
 in addition, `oxidize scan` **respects `.oxignore`** by default: any path that `oxidize add` would skip is also skipped here. pass `--no-oxignore` to disable the rule for a single invocation (e.g. for a one-off security audit).
 
+## placeholder denylist
+
+the scanner automatically skips matches whose value is a known placeholder or example string. this avoids false positives on documentation, `README` snippets, and starter templates.
+
+**skipped values:** `changeme`, `changeme123`, `password`, `password123`, `your_api_key_here`, `your_token_here`, `your_secret_here`, `replace_me`, `xxx`, `xxxxxxxx`, `example`, `test`, `dummy`, `placeholder`, `foobar`, `foo`, `bar`, `12345678`, `00000000`, `REPLACE_ME`, `YOUR_KEY`, `TODO`, `FIXME`
+
+**skipped filenames:** `.env.example`, `.env.sample`, `.env.template`, `config.example`, `config.sample`, `config.template`, `docker-compose.example`, `docker-compose.override`
+
+to add your own placeholders, contribute to `_PLACEHOLDER_TOKENS` or `_TEMPLATE_STEMS` in `oxidize/security/scanner.py`.
+
 ## output format
 
 when secrets are found, the scanner outputs:
