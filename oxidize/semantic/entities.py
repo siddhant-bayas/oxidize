@@ -5,6 +5,8 @@ import re
 from dataclasses import dataclass, field
 from enum import Enum
 
+from oxidize.semantic.parser import HAS_TREE_SITTER, parse_source
+
 
 class EntityType(str, Enum):
     FUNCTION = "function"
@@ -16,7 +18,9 @@ class EntityType(str, Enum):
 @dataclass(frozen=True)
 class Entity:
     name: str
+    qualified_name: str
     entity_type: EntityType
+    parent_class: str
     start_line: int
     end_line: int
     body_hash: str = ""
@@ -28,6 +32,110 @@ class Entity:
 
 
 def extract_entities(source: str) -> list[Entity]:
+    if HAS_TREE_SITTER:
+        result = _extract_tree_sitter(source)
+        if result is not None:
+            return result
+    return _extract_regex(source)
+
+
+def _unwrap(node: object) -> object:  # type: ignore[type-arg]
+    """Return the inner definition from a decorated_definition, or node itself."""
+    if getattr(node, "type", None) == "decorated_definition":  # type: ignore[union-attr]
+        for child in node.children:  # type: ignore[union-attr]
+            if child.type in ("function_definition", "class_definition"):
+                return child
+    return node
+
+
+def _node_name(node: object) -> str | None:
+    name_field = node.child_by_field_name("name")  # type: ignore[union-attr]
+    if name_field is None:
+        return None
+    return name_field.text.decode()  # type: ignore[union-attr]
+
+
+def _node_source(node: object, source: str) -> str:
+    start_byte = node.start_byte  # type: ignore[union-attr]
+    end_byte = node.end_byte  # type: ignore[union-attr]
+    return source.encode()[start_byte:end_byte].decode()
+
+
+def _parse_function(node: object, source: str, *, parent: str) -> Entity | None:  # type: ignore[type-arg]
+    name = _node_name(node)  # type: ignore[arg-type]
+    if name is None:
+        return None
+    block = node.child_by_field_name("body")  # type: ignore[union-attr]
+    if block is None:
+        return None
+    body_source = _node_source(block, source)
+    body_hash = hashlib.sha256(body_source.encode()).hexdigest()[:16]
+    start = node.start_point.row + 1  # type: ignore[union-attr]
+    end = node.end_point.row + 1  # type: ignore[union-attr]
+    qualified = f"{parent}.{name}" if parent else name
+    ent_type = EntityType.METHOD if parent else EntityType.FUNCTION
+    return Entity(
+        name=name,
+        qualified_name=qualified,
+        entity_type=ent_type,
+        parent_class=parent,
+        start_line=start,
+        end_line=end,
+        body_hash=body_hash,
+        source=body_source,
+    )
+
+
+def _extract_class(class_node: object, source: str) -> list[Entity]:  # type: ignore[type-arg]
+    name = _node_name(class_node)  # type: ignore[arg-type]
+    if name is None:
+        return []
+    block = class_node.child_by_field_name("body")  # type: ignore[union-attr]
+    if block is None:
+        return []
+    body_source = _node_source(block, source)
+    body_hash = hashlib.sha256(body_source.encode()).hexdigest()[:16]
+    start = class_node.start_point.row + 1  # type: ignore[union-attr]
+    end = class_node.end_point.row + 1  # type: ignore[union-attr]
+    entities: list[Entity] = [
+        Entity(
+            name=name,
+            qualified_name=name,
+            entity_type=EntityType.CLASS,
+            parent_class="",
+            start_line=start,
+            end_line=end,
+            body_hash=body_hash,
+            source=body_source,
+        )
+    ]
+    for child in block.children:  # type: ignore[union-attr]
+        inner = _unwrap(child)
+        if getattr(inner, "type", None) == "function_definition":  # type: ignore[union-attr]
+            ent = _parse_function(inner, source, parent=name)
+            if ent is not None:
+                entities.append(ent)
+    return entities
+
+
+def _extract_tree_sitter(source: str) -> list[Entity] | None:
+    tree = parse_source(source)
+    if tree is None:
+        return None
+    root = tree.root_node  # type: ignore[union-attr]
+    entities: list[Entity] = []
+    for node in root.children:  # type: ignore[union-attr]
+        inner = _unwrap(node)
+        if getattr(inner, "type", None) == "function_definition":  # type: ignore[union-attr]
+            ent = _parse_function(inner, source, parent="")
+            if ent is not None:
+                entities.append(ent)
+        elif getattr(inner, "type", None) == "class_definition":  # type: ignore[union-attr]
+            entities.extend(_extract_class(inner, source))
+    return entities
+
+
+def _extract_regex(source: str) -> list[Entity]:
     entities: list[Entity] = []
     lines = source.split("\n")
 
@@ -37,27 +145,37 @@ def extract_entities(source: str) -> list[Entity]:
         stripped = line.lstrip()
         indent = len(line) - len(stripped)
 
-        if stripped.startswith("def "):
-            match = re.match(r"def\s+(\w+)\s*\(", stripped)
-            if match:
-                name = match.group(1)
-                body_lines, end = _extract_body(lines, i + 1, indent + 4)
-                body = "\n".join(body_lines)
-                h = hashlib.sha256(body.encode()).hexdigest()[:16]
-                entities.append(
-                    Entity(
-                        name=name,
-                        entity_type=EntityType.METHOD
-                        if _is_indented(indent)
-                        else EntityType.FUNCTION,
-                        start_line=i + 1,
-                        end_line=end + 1,
-                        body_hash=h,
-                        source=body,
+        if stripped.startswith("def ") or stripped.startswith("@"):
+            if stripped.startswith("@"):
+                i += 1
+                if i >= len(lines):
+                    break
+                stripped = lines[i].lstrip()
+                indent = len(lines[i]) - len(stripped)
+            if stripped.startswith("def "):
+                match = re.match(r"def\s+(\w+)\s*\(", stripped)
+                if match:
+                    name = match.group(1)
+                    body_lines, end = _extract_body(lines, i + 1, indent + 4)
+                    body = "\n".join(body_lines)
+                    h = hashlib.sha256(body.encode()).hexdigest()[:16]
+                    ent_type = EntityType.METHOD if _is_indented(indent) else EntityType.FUNCTION
+                    parent = _find_enclosing_class(entities) if ent_type == EntityType.METHOD else ""
+                    qualified = f"{parent}.{name}" if parent else name
+                    entities.append(
+                        Entity(
+                            name=name,
+                            qualified_name=qualified,
+                            entity_type=ent_type,
+                            parent_class=parent,
+                            start_line=i + 1,
+                            end_line=end + 1,
+                            body_hash=h,
+                            source=body,
+                        )
                     )
-                )
-                i = end + 1
-                continue
+                    i = end + 1
+                    continue
 
         elif stripped.startswith("class "):
             match = re.match(r"class\s+(\w+)", stripped)
@@ -69,7 +187,9 @@ def extract_entities(source: str) -> list[Entity]:
                 entities.append(
                     Entity(
                         name=name,
+                        qualified_name=name,
                         entity_type=EntityType.CLASS,
+                        parent_class="",
                         start_line=i + 1,
                         end_line=end + 1,
                         body_hash=h,
@@ -82,6 +202,13 @@ def extract_entities(source: str) -> list[Entity]:
         i += 1
 
     return entities
+
+
+def _find_enclosing_class(entities: list[Entity]) -> str:
+    for ent in reversed(entities):
+        if ent.entity_type == EntityType.CLASS:
+            return ent.name
+    return ""
 
 
 def _extract_body(lines: list[str], start: int, expected_indent: int) -> tuple[list[str], int]:
@@ -110,6 +237,9 @@ def _is_indented(indent: int) -> bool:
 @dataclass
 class EntitySnapshot:
     entities: list[Entity] = field(default_factory=list)
+
+    def by_qualified_name(self) -> dict[str, Entity]:
+        return {e.qualified_name: e for e in self.entities}
 
     def by_name(self) -> dict[str, Entity]:
         return {e.name: e for e in self.entities}
