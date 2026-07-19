@@ -42,22 +42,22 @@ oxidize is **not** a git replacement for big teams or monorepos. it's a focused,
 | content-addressable store, blob/tree/commit | stable | v0.1.0 |
 | recursive-tree directories | stable | v0.1.0 |
 | `.oxignore` with full `.gitignore` syntax | stable | v0.1.0 |
-| secret scanner (21 patterns) | stable | v0.1.0 |
+| secret scanner (23 patterns) | stable | v0.1.0 |
 | structured data merge | stable | v0.1.0 |
 | notebook cell-level diff | stable | v0.1.0 |
 | interactive REPL (`oxi`) | stable | v0.1.0 |
 | safe undo (journaled) | stable | v0.1.0 |
 | branches / tags / checkout / 3-way merge | stable | v0.1.0 |
 | conflict resolution UI (`oxidize resolve`) | stable | v0.1.0 |
-| stash | stable | v0.1.0 |
-| bisect | stable | v0.1.0 |
-| hooks (`pre-commit`, etc) | stable | v0.1.0 |
 | ai-agent provenance + filtering | stable | v0.1.0 |
 | ai-agent detection env-var coverage | stable | v0.1.0 |
-| blame (line-level) | stable | v0.1.0 |
-| remote sync (filesystem only) | alpha | v0.1.0 |
-| semantic AST diffs (`tree-sitter`) | experimental | v0.1.0 |
-| ai-agent prose locking + qa | experimental | (planning) |
+| stash | beta | v0.1.0 |
+| bisect | beta | v0.1.0 |
+| hooks (`pre-commit`, etc) | beta | v0.1.0 |
+| blame (line-level) | beta | v0.1.0 |
+| remote sync (filesystem only) | beta | v0.1.0 |
+| semantic diffs (AST-aware, `tree-sitter`) | alpha | v0.2.1 |
+| ai-agent prose locking + qa | (planning) | -- |
 | network remotes (http, ssh) | not yet | -- |
 | LFS-style large-file extension | not yet | -- |
 | submodule support | not yet | -- |
@@ -106,7 +106,7 @@ launching `oxi` with no args opens a prompt_toolkit REPL with tab completion, hi
 * **branches, tags, checkout, merge, resolve** -- full VCS primitives
 * **stash / bisect / hooks** -- everyday workflow commands
 * **filesystem remote sync** -- bare-repo clone/push/pull (network protocols coming)
-* **semantic diffs (experimental)** -- AST-aware diffs via the `semantic` extra
+* **semantic diffs (alpha)** -- AST-aware diffs via the `semantic` extra
 
 ## docs
 
@@ -117,11 +117,12 @@ launching `oxi` with no args opens a prompt_toolkit REPL with tab completion, hi
 * [Ignores](docs/ignores.md) -- `.oxignore` patterns, builtins, force usage
 * [Branching & Merging](docs/branching.md) -- branches, checkout, 3-way merge, conflicts
 * [Workflow Commands](docs/workflow.md) -- stash, bisect, hooks, tags, blame, notebook-diff
-* [Remote Sync](docs/remote.md) -- filesystem-only clone/push/pull (alpha)
+* [Remote Sync](docs/remote.md) -- filesystem-only clone/push/pull (beta)
 * [Undo System](docs/undo.md) -- reversing operations
 * [Semantic Diffs](docs/semantic-diffs.md) -- AST-aware diffs
 * [Notebook Support](docs/notebook-support.md) -- Jupyter notebook versioning
 * [Structured Merge](docs/merge.md) -- key-level data merging
+* [Changelog](CHANGELOG.md)
 * [Agent Provenance](docs/provenance.md) -- AI agent tracking
 * [Object Storage](docs/storage.md) -- storage internals
 * [Python API Reference](docs/api-reference.md) -- complete Python API
