@@ -4,6 +4,7 @@ import hashlib
 import re
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 from oxidize.semantic.parser import HAS_TREE_SITTER, parse_source
 
@@ -39,39 +40,39 @@ def extract_entities(source: str) -> list[Entity]:
     return _extract_regex(source)
 
 
-def _unwrap(node: object) -> object:  # type: ignore[type-arg]
-    """Return the inner definition from a decorated_definition, or node itself."""
-    if getattr(node, "type", None) == "decorated_definition":  # type: ignore[union-attr]
-        for child in node.children:  # type: ignore[union-attr]
+def _unwrap(node: Any) -> Any:
+    if getattr(node, "type", None) == "decorated_definition":
+        for child in node.children:
             if child.type in ("function_definition", "class_definition"):
                 return child
     return node
 
 
-def _node_name(node: object) -> str | None:
-    name_field = node.child_by_field_name("name")  # type: ignore[union-attr]
+def _node_name(node: Any) -> str | None:
+    name_field = node.child_by_field_name("name")
     if name_field is None:
         return None
-    return name_field.text.decode()  # type: ignore[union-attr]
+    decoded: str = name_field.text.decode()
+    return decoded
 
 
-def _node_source(node: object, source: str) -> str:
-    start_byte = node.start_byte  # type: ignore[union-attr]
-    end_byte = node.end_byte  # type: ignore[union-attr]
+def _node_source(node: Any, source: str) -> str:
+    start_byte = node.start_byte
+    end_byte = node.end_byte
     return source.encode()[start_byte:end_byte].decode()
 
 
-def _parse_function(node: object, source: str, *, parent: str) -> Entity | None:  # type: ignore[type-arg]
-    name = _node_name(node)  # type: ignore[arg-type]
+def _parse_function(node: Any, source: str, *, parent: str) -> Entity | None:
+    name = _node_name(node)
     if name is None:
         return None
-    block = node.child_by_field_name("body")  # type: ignore[union-attr]
+    block = node.child_by_field_name("body")
     if block is None:
         return None
     body_source = _node_source(block, source)
     body_hash = hashlib.sha256(body_source.encode()).hexdigest()[:16]
-    start = node.start_point.row + 1  # type: ignore[union-attr]
-    end = node.end_point.row + 1  # type: ignore[union-attr]
+    start = node.start_point.row + 1
+    end = node.end_point.row + 1
     qualified = f"{parent}.{name}" if parent else name
     ent_type = EntityType.METHOD if parent else EntityType.FUNCTION
     return Entity(
@@ -86,17 +87,17 @@ def _parse_function(node: object, source: str, *, parent: str) -> Entity | None:
     )
 
 
-def _extract_class(class_node: object, source: str) -> list[Entity]:  # type: ignore[type-arg]
-    name = _node_name(class_node)  # type: ignore[arg-type]
+def _extract_class(class_node: Any, source: str) -> list[Entity]:
+    name = _node_name(class_node)
     if name is None:
         return []
-    block = class_node.child_by_field_name("body")  # type: ignore[union-attr]
+    block = class_node.child_by_field_name("body")
     if block is None:
         return []
     body_source = _node_source(block, source)
     body_hash = hashlib.sha256(body_source.encode()).hexdigest()[:16]
-    start = class_node.start_point.row + 1  # type: ignore[union-attr]
-    end = class_node.end_point.row + 1  # type: ignore[union-attr]
+    start = class_node.start_point.row + 1
+    end = class_node.end_point.row + 1
     entities: list[Entity] = [
         Entity(
             name=name,
@@ -109,9 +110,9 @@ def _extract_class(class_node: object, source: str) -> list[Entity]:  # type: ig
             source=body_source,
         )
     ]
-    for child in block.children:  # type: ignore[union-attr]
+    for child in block.children:
         inner = _unwrap(child)
-        if getattr(inner, "type", None) == "function_definition":  # type: ignore[union-attr]
+        if getattr(inner, "type", None) == "function_definition":
             ent = _parse_function(inner, source, parent=name)
             if ent is not None:
                 entities.append(ent)
@@ -122,15 +123,15 @@ def _extract_tree_sitter(source: str) -> list[Entity] | None:
     tree = parse_source(source)
     if tree is None:
         return None
-    root = tree.root_node  # type: ignore[union-attr]
+    root = tree.root_node
     entities: list[Entity] = []
-    for node in root.children:  # type: ignore[union-attr]
+    for node in root.children:
         inner = _unwrap(node)
-        if getattr(inner, "type", None) == "function_definition":  # type: ignore[union-attr]
+        if getattr(inner, "type", None) == "function_definition":
             ent = _parse_function(inner, source, parent="")
             if ent is not None:
                 entities.append(ent)
-        elif getattr(inner, "type", None) == "class_definition":  # type: ignore[union-attr]
+        elif getattr(inner, "type", None) == "class_definition":
             entities.extend(_extract_class(inner, source))
     return entities
 
@@ -160,7 +161,9 @@ def _extract_regex(source: str) -> list[Entity]:
                     body = "\n".join(body_lines)
                     h = hashlib.sha256(body.encode()).hexdigest()[:16]
                     ent_type = EntityType.METHOD if _is_indented(indent) else EntityType.FUNCTION
-                    parent = _find_enclosing_class(entities) if ent_type == EntityType.METHOD else ""
+                    parent = (
+                        _find_enclosing_class(entities) if ent_type == EntityType.METHOD else ""
+                    )
                     qualified = f"{parent}.{name}" if parent else name
                     entities.append(
                         Entity(
