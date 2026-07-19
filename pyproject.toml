@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "oxidize"
+name = "pyoxidize"
 version = "0.2.1"
 description = "a version control system with semantic awareness built-in undo and interactive shell"
 readme = "README.md"
