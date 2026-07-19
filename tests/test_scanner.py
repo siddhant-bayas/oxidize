@@ -158,3 +158,64 @@ def test_oxi_scan_staged_respects_oxignore(in_repo: Repository) -> None:
     res = runner.invoke(cli, ["scan", "--staged"], catch_exceptions=False)
     assert res.exit_code == 0, res.output
     assert "secret.env" not in res.output
+
+
+def test_scan_skips_placeholder_values() -> None:
+    findings = scan_text('api_key = "changeme"', "config.py")
+    assert findings == []
+
+
+def test_scan_skips_placeholder_your_key_here() -> None:
+    findings = scan_text('token = "your_api_key_here"', "settings.py")
+    assert findings == []
+
+
+def test_scan_skips_xxx_placeholder() -> None:
+    findings = scan_text('secret = "xxx"', "config.py")
+    assert findings == []
+
+
+def test_scan_finds_real_secret_not_placeholder() -> None:
+    text = 'secret = "' + "a" * 40 + '"'
+    findings = scan_text(text, "config.py")
+    assert any(f["type"] == "Generic Password" for f in findings)
+
+
+def test_scan_skips_env_example_file() -> None:
+    text = 'STRIPE_KEY = "' + "a" * 30 + '"'
+    findings = scan_text(text, ".env.example")
+    assert findings == []
+
+
+def test_scan_skips_env_sample_file() -> None:
+    text = 'STRIPE_KEY = "' + "a" * 30 + '"'
+    findings = scan_text(text, ".env.sample")
+    assert findings == []
+
+
+def test_scan_skips_config_example_file() -> None:
+    text = 'STRIPE_KEY = "' + "a" * 30 + '"'
+    findings = scan_text(text, "config.example")
+    assert findings == []
+
+
+def test_scan_does_not_skip_real_env_file() -> None:
+    text = 'password = "s3cr3tP@ssw0rdX!"'
+    findings = scan_text(text, ".env")
+    assert len(findings) > 0
+
+
+def test_scan_skips_changeme123() -> None:
+    findings = scan_text('password = "changeme123"', ".env")
+    assert findings == []
+
+
+def test_scan_skips_test_secret() -> None:
+    findings = scan_text('secret = "test"', "config.py")
+    assert findings == []
+
+
+def test_scan_skips_template_suffix_in_env() -> None:
+    text = 'SECRET = "' + "a" * 30 + '"'
+    findings = scan_text(text, ".env.template")
+    assert findings == []

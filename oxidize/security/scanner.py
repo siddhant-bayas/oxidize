@@ -36,6 +36,28 @@ PATTERNS: dict[str, str] = {
 
 _COMPILED = {name: re.compile(p) for name, p in PATTERNS.items()}
 
+
+def _is_template_file(filepath: str) -> bool:
+    path = Path(filepath)
+    if path.name in _TEMPLATE_STEMS:
+        return True
+    if path.name.startswith(".env"):
+        for suffix in _TEMPLATE_SUFFIXES:
+            if path.name.endswith(suffix):
+                return True
+    return False
+
+
+def _is_placeholder(matched: str) -> bool:
+    quoted = re.findall(r"['\"]([^'\"]+)['\"]", matched)
+    for q in quoted:
+        if q.lower().strip() in _PLACEHOLDER_TOKENS:
+            return True
+    stripped = matched.strip().strip("\"' ")
+    if stripped.lower() in _PLACEHOLDER_TOKENS:
+        return True
+    return False
+
 _IGNORE_DIRS = {
     ".oxidize",
     ".git",
@@ -53,13 +75,72 @@ _IGNORE_DIRS = {
     "build",
 }
 
+_TEMPLATE_SUFFIXES = {
+    ".example",
+    ".sample",
+    ".template",
+    ".tpl",
+    ".tmpl",
+}
+
+_PLACEHOLDER_TOKENS = {
+    "changeme",
+    "changeme123",
+    "password",
+    "password123",
+    "your_api_key_here",
+    "your_api_key",
+    "your-api-key-here",
+    "your-token-here",
+    "your_token_here",
+    "your-secret-here",
+    "your_secret_here",
+    "replace_me",
+    "replace_me_with_your_key",
+    "xxx",
+    "xxxxxxxx",
+    "xxxx-xxxx-xxxx",
+    "insert_key_here",
+    "sk-test-xxxx",
+    "sk-live-xxxx",
+    "example",
+    "test",
+    "dummy",
+    "placeholder",
+    "foobar",
+    "foo",
+    "bar",
+    "baz",
+    "12345678",
+    "00000000",
+    "REPLACE_ME",
+    "YOUR_KEY",
+    "TODO",
+    "FIXME",
+}
+
+_TEMPLATE_STEMS = {
+    ".env.example",
+    ".env.sample",
+    ".env.template",
+    "config.example",
+    "config.sample",
+    "config.template",
+    "docker-compose.example",
+    "docker-compose.override",
+}
+
 
 def scan_text(text: str, filepath: str = "<input>") -> list[dict[str, str | int]]:
+    if _is_template_file(filepath):
+        return []
     findings: list[dict[str, str | int]] = []
     for name, pattern in _COMPILED.items():
         for match in pattern.finditer(text):
             line_num = text[: match.start()].count("\n") + 1
             matched = match.group()
+            if _is_placeholder(matched):
+                continue
             if len(matched) > 60:
                 matched = matched[:60] + "..."
             findings.append({"type": name, "file": filepath, "line": line_num, "match": matched})
