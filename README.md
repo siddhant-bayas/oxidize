@@ -6,7 +6,6 @@ a content-addressable, semantic-aware version control system -- built from scrat
 [![pypi](https://img.shields.io/pypi/v/pyoxidize)](https://pypi.org/project/pyoxidize/)
 [![python](https://img.shields.io/badge/python-3.11%2B-blue)](https://pypi.org/project/pyoxidize/)
 [![size](https://img.shields.io/badge/pip_install_size-tiny-blue)](#install--dependencies)
-[![tests](https://img.shields.io/badge/tests-99%20passing-brightgreen)](#)
 
 ## install
 
