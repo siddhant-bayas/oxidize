@@ -121,8 +121,12 @@ def test_class_with_multiple_methods() -> None:
 
 
 def test_same_method_different_classes_no_false_rename() -> None:
-    old = "class A:\n    def run(self):\n        pass\n\nclass B:\n    def run(self):\n        pass\n"
-    new = "class A:\n    def run(self):\n        pass\n\nclass B:\n    def run(self):\n        pass\n"
+    old = (
+        "class A:\n    def run(self):\n        pass\n\nclass B:\n    def run(self):\n        pass\n"
+    )
+    new = (
+        "class A:\n    def run(self):\n        pass\n\nclass B:\n    def run(self):\n        pass\n"
+    )
     changes = semantic_diff(old, new)
     assert len(changes) == 0
 

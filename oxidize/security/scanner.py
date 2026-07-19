@@ -58,6 +58,7 @@ def _is_placeholder(matched: str) -> bool:
         return True
     return False
 
+
 _IGNORE_DIRS = {
     ".oxidize",
     ".git",

@@ -2,6 +2,7 @@
 
 Splits directory adds into per-file commits so each entrypoint gets its own.
 """
+
 from __future__ import annotations
 
 import subprocess
