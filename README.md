@@ -31,6 +31,7 @@ optional extras add `tree-sitter`, `nbformat`, etc. core itself pulls in only `c
 | interactive REPL with status bar | ❌ | ✅ |
 | safe undo of every operation | ❌ | ✅ |
 | local-self-contained footprint | ⚠ git + curl + ssh | ✅ one pip package |
+| push to github | ⚠ requires git | ✅ via REST API |
 | LFS over network | ✅ | ⏳ (filesystem remote only) |
 
 oxidize is **not** a git replacement for big teams or monorepos. it's a focused, single-binary, Python-venv-friendly alternative for personal and small-team projects where the semantic and provenance extras matter more than SSH-authenticated push.
@@ -55,10 +56,10 @@ oxidize is **not** a git replacement for big teams or monorepos. it's a focused,
 | bisect | beta | v0.1.0 |
 | hooks (`pre-commit`, etc) | beta | v0.1.0 |
 | blame (line-level) | beta | v0.1.0 |
-| remote sync (filesystem only) | beta | v0.1.0 |
+| remote sync (filesystem + github push) | beta | v0.1.0 |
 | semantic diffs (AST-aware, `tree-sitter`) | alpha | v0.2.1 |
 | ai-agent prose locking + qa | (planning) | -- |
-| network remotes (http, ssh) | not yet | -- |
+| network remotes (github REST, push-only) | alpha | v0.2.2 |
 | LFS-style large-file extension | not yet | -- |
 | submodule support | not yet | -- |
 
@@ -105,7 +106,8 @@ launching `oxi` with no args opens a prompt_toolkit REPL with tab completion, hi
 * **built-in undo** -- every operation is safely reversible
 * **branches, tags, checkout, merge, resolve** -- full VCS primitives
 * **stash / bisect / hooks** -- everyday workflow commands
-* **filesystem remote sync** -- bare-repo clone/push/pull (network protocols coming)
+* **filesystem remote sync** -- bare-repo clone/push/pull with atomic writes
+* **github remote** -- push-only export to github repos via REST API (no git needed)
 * **semantic diffs (alpha)** -- AST-aware diffs via the `semantic` extra
 
 ## docs
@@ -117,7 +119,7 @@ launching `oxi` with no args opens a prompt_toolkit REPL with tab completion, hi
 * [Ignores](docs/ignores.md) -- `.oxignore` patterns, builtins, force usage
 * [Branching & Merging](docs/branching.md) -- branches, checkout, 3-way merge, conflicts
 * [Workflow Commands](docs/workflow.md) -- stash, bisect, hooks, tags, blame, notebook-diff
-* [Remote Sync](docs/remote.md) -- filesystem-only clone/push/pull (beta)
+* [Remote Sync](docs/remote.md) -- filesystem + github remote (beta)
 * [Undo System](docs/undo.md) -- reversing operations
 * [Semantic Diffs](docs/semantic-diffs.md) -- AST-aware diffs
 * [Notebook Support](docs/notebook-support.md) -- Jupyter notebook versioning
@@ -161,7 +163,7 @@ oxidize/
   provenance/    ai agent tracking
   undo/          operation journal and reversal
   workflow/      stash, bisect, hooks, blame
-  network/       filesystem remote sync
+  network/       filesystem + github remote sync
   staging/       stash
   cli/           click commands and prompt_toolkit repl
 ```

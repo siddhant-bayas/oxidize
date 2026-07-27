@@ -179,7 +179,6 @@ def test_is_ancestor_merge(tmp_path: Path) -> None:
 
 
 def test_push_nested_trees_all_objects_copied(tmp_path: Path) -> None:
-    """DFS must recurse into subtrees — nested blobs are copied, not just top-level."""
     src = tmp_path / "src"
     Repository.init(src)
     src_repo = Repository(src)
@@ -224,7 +223,6 @@ def test_push_nested_trees_all_objects_copied(tmp_path: Path) -> None:
 
 
 def test_incremental_push_only_copies_new_objects(tmp_path: Path) -> None:
-    """Second push uses DFS and skips objects already in the remote."""
     src = tmp_path / "src"
     Repository.init(src)
     src_repo = Repository(src)

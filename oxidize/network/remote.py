@@ -15,7 +15,6 @@ class TransferError(Exception):
 
 
 def _has_objects(objects_dir: Path) -> bool:
-    """Check if an objects directory contains any object files."""
     if not objects_dir.exists():
         return False
     for prefix_dir in objects_dir.iterdir():
@@ -26,7 +25,6 @@ def _has_objects(objects_dir: Path) -> bool:
 
 
 def _bulk_copy_objects(src_root: Path, dst_root: Path) -> None:
-    """Copy every object from src/objects to dst/objects (no graph walk)."""
     src_objects = src_root / "objects"
     dst_objects = dst_root
     if not src_objects.exists():

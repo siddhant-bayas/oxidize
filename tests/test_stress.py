@@ -70,11 +70,6 @@ def _stats(name: str, t0: float, *, obj_count: int | None = None, api_calls: int
     print("  ".join(parts))
 
 
-# ============================================================================
-# SECTION 1: Filesystem Remote Stress
-# ============================================================================
-
-
 def test_deep_chain_500(tmp_path: Path) -> None:
     tracemalloc.start()
     t0 = time.perf_counter()
@@ -254,11 +249,6 @@ def test_clone_detached_deep(tmp_path: Path) -> None:
     head_content = (clone_repo.oxidize_dir / "HEAD").read_text().strip()
     _stats("clone_detached_deep", t0, obj_count=200)
     assert head_content == head
-
-
-# ============================================================================
-# SECTION 2: GitHub Remote Stress
-# ============================================================================
 
 
 def test_github_50_commits(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -506,11 +496,6 @@ def test_github_agent_trailers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         assert "Oxidize-Agent: claude-code" in msg
 
 
-# ============================================================================
-# SECTION 3: Rate Limit & Error Handling
-# ============================================================================
-
-
 def test_rate_limit_retry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OXIDIZE_GITHUB_TOKEN", "fake")
     t0 = time.perf_counter()
@@ -593,11 +578,6 @@ def test_network_timeout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
 
     elapsed = (time.perf_counter() - t0) * 1000
     print(f"  network_timeout: {elapsed:.0f}ms")
-
-
-# ============================================================================
-# SECTION 4: CLI Integration Stress
-# ============================================================================
 
 
 def test_cli_github_push(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

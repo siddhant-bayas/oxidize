@@ -14,11 +14,7 @@ _T = TypeVar("_T")
 
 
 def _atomic_write(dst: Path, write_fn: Callable[[Path], _T]) -> None:
-    """Write to dst atomically via temp-file-then-replace.
-
-    write_fn(tmp_path) must write the complete content to tmp_path.
-    If write_fn raises, the temp file is removed and dst is untouched.
-    """
+    """write to dst atomically via temp-file-then-replace."""
     fd, tmp_name = tempfile.mkstemp(dir=dst.parent)
     tmp = Path(tmp_name)
     try:

@@ -373,6 +373,42 @@ the journal is stored at `.oxidize/journal.json` as a JSON array of entries, eac
 
 ---
 
+## oxidize remote
+
+manage remotes (filesystem or github).
+
+```
+oxidize remote SUBCOMMAND
+```
+
+### subcommands
+
+| subcommand | syntax | description |
+|------------|--------|-------------|
+| `clone` | `oxidize remote clone <url> [target]` | clone a filesystem remote (not github) |
+| `push` | `oxidize remote push <url> [branch]` | push branches to a remote |
+| `pull` | `oxidize remote pull <url> [branch]` | pull branches from a filesystem remote |
+
+**push flags:**
+
+| flag | description |
+|------|-------------|
+| `--force`, `-f` | overwrite divergent refs |
+
+**backend selection:**
+- `https://github.com/...` or `git@github.com:...` → github REST API (push-only, needs `OXIDIZE_GITHUB_TOKEN`)
+- anything else → filesystem remote (directory path or `file://` URL)
+
+**examples:**
+```bash
+oxidize remote push file:///srv/backup main
+oxidize remote push https://github.com/user/repo.git main
+oxidize remote clone file:///srv/backup ./copy
+oxidize remote pull file:///srv/backup main
+```
+
+---
+
 ## command summary
 
 | command | syntax | key flags |
@@ -385,3 +421,6 @@ the journal is stored at `.oxidize/journal.json` as a JSON array of entries, eac
 | `diff` | `oxidize diff [PATHS...]` | `--cached` |
 | `scan` | `oxidize scan [PATHS...]` | `--staged` |
 | `undo` | `oxidize undo [SUBCOMMAND]` | `count N`, `journal` |
+| `remote clone` | `oxidize remote clone <url> [target]` | filesystem only |
+| `remote push` | `oxidize remote push <url> [branch]` | `--force` |
+| `remote pull` | `oxidize remote pull <url> [branch]` | filesystem only |
