@@ -163,9 +163,7 @@ class GitHubRemote:
         self, repo: Repository, commit_map: dict[str, str], blob_map: dict[str, str]
     ) -> None:
         map_path = repo.oxidize_dir / "github_export_map.json"
-        map_path.write_text(
-            json.dumps({"commits": commit_map, "blobs": blob_map}, indent=2)
-        )
+        map_path.write_text(json.dumps({"commits": commit_map, "blobs": blob_map}, indent=2))
 
     @staticmethod
     def _ts_to_iso(ts: int) -> str:

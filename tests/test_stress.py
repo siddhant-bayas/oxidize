@@ -20,7 +20,9 @@ from .conftest import make_commit
 def _make_chain(repo: Repository, n: int) -> str:
     parent = None
     for i in range(n):
-        parent = make_commit(repo, {"a.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else None)
+        parent = make_commit(
+            repo, {"a.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else None
+        )
     return parent
 
 
@@ -106,7 +108,9 @@ def test_pull_incremental(tmp_path: Path) -> None:
 
     parent = None
     for i in range(30):
-        parent = make_commit(src_repo, {"a.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else None)
+        parent = make_commit(
+            src_repo, {"a.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else None
+        )
     src_repo.refs.write("refs/heads/main", parent)
 
     remote = Remote(str(tmp_path / "remote"))
@@ -118,12 +122,18 @@ def test_pull_incremental(tmp_path: Path) -> None:
 
     partial_parent = None
     for i in range(10):
-        partial_parent = make_commit(dest_repo, {"a.txt": f"v{i}"}, f"commit {i}", parents=[partial_parent] if partial_parent else None)
+        partial_parent = make_commit(
+            dest_repo,
+            {"a.txt": f"v{i}"},
+            f"commit {i}",
+            parents=[partial_parent] if partial_parent else None,
+        )
     dest_repo.refs.write("refs/heads/main", partial_parent)
 
     copy_count = 0
 
     from oxidize.network import remote as remote_mod
+
     original_copy_fn = remote_mod._copy_object
 
     def counting_copy(src_root: Path, dst_root: Path, oid: str) -> None:
@@ -193,7 +203,9 @@ def test_github_50_commits(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
     parent = None
     for i in range(50):
-        parent = make_commit(src_repo, {f"f{i}.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else None)
+        parent = make_commit(
+            src_repo, {f"f{i}.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else None
+        )
     src_repo.refs.write("refs/heads/main", parent)
 
     remote = GitHubRemote("owner", "repo")
@@ -277,6 +289,7 @@ def test_github_large_blob(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     def mock_request(method: str, endpoint: str, data: dict | None = None) -> dict:
         if "/git/blobs" in endpoint and data:
             import base64
+
             captured_blob_content.append(base64.b64decode(data["content"]))
             return {"sha": "big_blob"}
         if "/git/trees" in endpoint:
@@ -332,7 +345,9 @@ def test_github_idempotent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
     parent = None
     for i in range(10):
-        parent = make_commit(src_repo, {f"f{i}.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else None)
+        parent = make_commit(
+            src_repo, {f"f{i}.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else None
+        )
     src_repo.refs.write("refs/heads/main", parent)
 
     remote = GitHubRemote("owner", "repo")
@@ -380,8 +395,11 @@ def test_github_agent_trailers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
             tree.add(e)
         src_repo.db.store_tree(tree)
         c = Commit(
-            tree_oid=tree.oid, author=author, committer=author,
-            message=f"commit {i}", parents=[parent] if parent else [],
+            tree_oid=tree.oid,
+            author=author,
+            committer=author,
+            message=f"commit {i}",
+            parents=[parent] if parent else [],
             agent="claude-code",
         )
         src_repo.db.store_commit(c)
@@ -420,10 +438,14 @@ def test_rate_limit_retry(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
         call_count += 1
         if call_count <= 2:
             from io import BytesIO
-            fp = BytesIO(b'rate limited')
+
+            fp = BytesIO(b"rate limited")
             raise urllib.error.HTTPError(
-                url=getattr(req, "full_url", ""), code=429, msg="rate limited",
-                hdrs={"Retry-After": "0"}, fp=fp
+                url=getattr(req, "full_url", ""),
+                code=429,
+                msg="rate limited",
+                hdrs={"Retry-After": "0"},
+                fp=fp,
             )
         resp = MagicMock()
         resp.status = 200
@@ -487,7 +509,9 @@ def test_cli_github_push(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     src_repo = Repository(src)
     parent = None
     for i in range(5):
-        parent = make_commit(src_repo, {f"f{i}.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else None)
+        parent = make_commit(
+            src_repo, {f"f{i}.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else None
+        )
     src_repo.refs.write("refs/heads/main", parent)
 
     remote = GitHubRemote("owner", "repo")
@@ -504,6 +528,7 @@ def test_cli_github_push(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.chdir(src)
     with patch.object(remote.api, "_request", side_effect=mock_request):
         from oxidize.network.github_remote import GitHubRemote as GR
+
         original_init = GR.__init__
 
         def patched_init(self_inner: GitHubRemote, owner: str, repo: str) -> None:
@@ -524,13 +549,16 @@ def test_cli_filesystem_push(tmp_path: Path) -> None:
     src_repo = Repository(src)
     parent = None
     for i in range(3):
-        parent = make_commit(src_repo, {f"f{i}.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else None)
+        parent = make_commit(
+            src_repo, {f"f{i}.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else None
+        )
     src_repo.refs.write("refs/heads/main", parent)
 
     remote_path = tmp_path / "remote"
     remote_path.mkdir()
 
     import os
+
     old_cwd = os.getcwd()
     os.chdir(src)
     try:
@@ -559,6 +587,7 @@ def test_cli_github_pull_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     Repository.init(src)
 
     import os
+
     old_cwd = os.getcwd()
     os.chdir(src)
     try:

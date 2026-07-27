@@ -56,10 +56,14 @@ class TestGitHubAPIMock:
             mock_req.return_value = {"sha": "abc123"}
             sha = api.create_blob(b"hello")
             assert sha == "abc123"
-            mock_req.assert_called_once_with("POST", "/git/blobs", {
-                "content": "aGVsbG8=",
-                "encoding": "base64",
-            })
+            mock_req.assert_called_once_with(
+                "POST",
+                "/git/blobs",
+                {
+                    "content": "aGVsbG8=",
+                    "encoding": "base64",
+                },
+            )
 
     def test_create_commit(self) -> None:
         from oxidize.network.github_api import GitHubAPI

@@ -110,7 +110,9 @@ def test_pull_deep_repo_all_objects(tmp_path: Path) -> None:
     oids = []
     parent = None
     for i in range(60):
-        oid = make_commit(src_repo, {"a.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else [])
+        oid = make_commit(
+            src_repo, {"a.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else []
+        )
         oids.append(oid)
         parent = oid
     src_repo.refs.write("refs/heads/main", oids[-1])
@@ -182,8 +184,11 @@ def test_push_nested_trees_all_objects_copied(tmp_path: Path) -> None:
     src_repo.db.store_tree(root_tree)
 
     commit = Commit(
-        tree_oid=root_tree.oid, author=author, committer=author,
-        message="nested", parents=[],
+        tree_oid=root_tree.oid,
+        author=author,
+        committer=author,
+        message="nested",
+        parents=[],
     )
     src_repo.db.store_commit(commit)
     src_repo.refs.write("refs/heads/main", commit.oid)
