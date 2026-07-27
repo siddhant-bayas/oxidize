@@ -1,10 +1,33 @@
 from __future__ import annotations
 
+import os
+import tempfile
 import zlib
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from pathlib import Path
+from typing import TypeVar
 
 from oxidize.objects.types import ObjectType
+
+_T = TypeVar("_T")
+
+
+def _atomic_write(dst: Path, write_fn: Callable[[Path], _T]) -> None:
+    """Write to dst atomically via temp-file-then-replace.
+
+    write_fn(tmp_path) must write the complete content to tmp_path.
+    If write_fn raises, the temp file is removed and dst is untouched.
+    """
+    fd, tmp_name = tempfile.mkstemp(dir=dst.parent)
+    tmp = Path(tmp_name)
+    try:
+        os.close(fd)
+        write_fn(tmp)
+        os.replace(tmp, dst)
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 class StorageBackend(ABC):
@@ -44,7 +67,8 @@ class FilesystemBackend(StorageBackend):
         if not path.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
             header = f"{type.value} {len(data)}\x00".encode()
-            path.write_bytes(zlib.compress(header + data))
+            compressed = zlib.compress(header + data)
+            _atomic_write(path, lambda tmp: tmp.write_bytes(compressed))
         return oid
 
     def exists(self, oid: str) -> bool:
