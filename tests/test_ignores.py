@@ -26,7 +26,7 @@ def test_empty_repo_no_oxignore(tmp_path: Path) -> None:
     (tmp_path / ".oxidize" / "objects").mkdir(parents=True, exist_ok=True)
     repo = Repository(tmp_path)
     matcher = IgnoreMatcher.from_repo(repo)
-    matcher._user_spec  # ensure load ran
+    _ = matcher._user_spec  # ensure load ran
     assert matcher.patterns() == []
     assert not matcher.is_ignored("main.py")
     assert not matcher.is_ignored("src/app.py")

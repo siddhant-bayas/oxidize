@@ -54,7 +54,8 @@ def _build_tree_with(repo: Repository, files: dict[str, str]) -> str:
     then storing the tree and returning its oid.
     """
     from collections import defaultdict
-    from oxidize.objects.types import Tree, TreeEntry, FileMode
+
+    from oxidize.objects.types import FileMode, Tree, TreeEntry
 
     entries_by_dir: dict[str, list[tuple[str, str]]] = defaultdict(list)
     for path, content in files.items():

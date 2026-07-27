@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
+from oxidize.objects.types import Author, Commit, FileMode, Tree, TreeEntry
 from oxidize.storage.backend import _atomic_write
 from oxidize.storage.database import ObjectDatabase
-from oxidize.objects.types import Tree, TreeEntry, FileMode, Author, Commit
 
 
 def test_store_and_load_blob(tmp_path: Path) -> None:

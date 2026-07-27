@@ -469,9 +469,11 @@ def test_rate_limit_exhausted(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     def mock_request(method: str, endpoint: str, data: dict | None = None) -> dict:
         raise GitHubAPIError(429, "rate limited")
 
-    with patch.object(api, "_request", side_effect=mock_request):
-        with pytest.raises(GitHubAPIError, match="429"):
-            api.create_blob(b"test")
+    with (
+        patch.object(api, "_request", side_effect=mock_request),
+        pytest.raises(GitHubAPIError, match="429"),
+    ):
+        api.create_blob(b"test")
 
 
 def test_get_ref_404(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -496,9 +498,11 @@ def test_network_timeout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     def mock_request(method: str, endpoint: str, data: dict | None = None) -> dict:
         raise urllib.error.URLError("timed out")
 
-    with patch.object(api, "_request", side_effect=mock_request):
-        with pytest.raises(urllib.error.URLError):
-            api.create_blob(b"test")
+    with (
+        patch.object(api, "_request", side_effect=mock_request),
+        pytest.raises(urllib.error.URLError),
+    ):
+        api.create_blob(b"test")
 
 
 def test_cli_github_push(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

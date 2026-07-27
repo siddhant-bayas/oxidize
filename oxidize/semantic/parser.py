@@ -4,8 +4,8 @@ from typing import Any
 
 HAS_TREE_SITTER = False
 try:
-    from tree_sitter import Language, Parser
     import tree_sitter_python
+    from tree_sitter import Language, Parser
 
     HAS_TREE_SITTER = True
 except ImportError:

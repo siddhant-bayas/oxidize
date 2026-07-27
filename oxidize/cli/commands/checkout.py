@@ -61,9 +61,12 @@ def _detach(repo: Repository, oid: str) -> None:
 
 
 def _restore_work_tree(repo: Repository, target_oid: str, force: bool) -> None:
-    if not force and any(_is_dirty(p, repo.work_tree) for p in repo.work_tree.iterdir()):
-        if not _staged_or_untracked(repo):
-            raise click.ClickException("local changes would be overwritten (use -f to discard)")
+    if (
+        not force
+        and any(_is_dirty(p, repo.work_tree) for p in repo.work_tree.iterdir())
+        and not _staged_or_untracked(repo)
+    ):
+        raise click.ClickException("local changes would be overwritten (use -f to discard)")
     commit = repo.db.load_commit(target_oid)
     tree = repo.db.load_tree(commit.tree_oid)
     _write_tree(repo, tree, repo.work_tree)

@@ -27,7 +27,7 @@ class Repository:
         self._ignore_matcher: IgnoreMatcher | None = None
 
     @classmethod
-    def init(cls, path: Path) -> "Repository":
+    def init(cls, path: Path) -> Repository:
         repo = cls(path)
         oxidize_dir = repo.oxidize_dir
         if (oxidize_dir / "HEAD").exists():
@@ -41,7 +41,7 @@ class Repository:
         return repo
 
     @classmethod
-    def discover(cls, start: Path | None = None) -> "Repository":
+    def discover(cls, start: Path | None = None) -> Repository:
         path = (start or Path.cwd()).resolve()
         for directory in [path, *path.parents]:
             if (directory / OXIDIZE_DIR).is_dir():

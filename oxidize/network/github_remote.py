@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import UTC
 
 from oxidize.core.repository import Repository
 from oxidize.network.github_api import GitHubAPI
@@ -167,15 +168,14 @@ class GitHubRemote:
 
     @staticmethod
     def _ts_to_iso(ts: int) -> str:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
-        return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return datetime.fromtimestamp(ts, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def parse_github_url(url: str) -> tuple[str, str] | None:
     url = url.rstrip("/")
-    if url.endswith(".git"):
-        url = url[:-4]
+    url = url.removesuffix(".git")
 
     if url.startswith("https://github.com/"):
         parts = url[len("https://github.com/") :].split("/")

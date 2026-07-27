@@ -25,7 +25,7 @@ def cmd_show(ref: str, stat: bool) -> None:
         raise click.ClickException(f"unknown ref: {ref}")
 
     commit = repo.db.load_commit(oid)
-    dt = datetime.datetime.fromtimestamp(commit.author.timestamp)
+    dt = datetime.datetime.fromtimestamp(commit.author.timestamp, tz=datetime.UTC)
     console.print(f"[yellow]commit {oid}[/]")
     console.print(f"Author: {commit.author.name} <{commit.author.email}>")
     if commit.agent:

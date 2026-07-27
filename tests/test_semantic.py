@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from oxidize.semantic.entities import EntityType, extract_entities
 from oxidize.semantic.differ import format_semantic_diff, semantic_diff
+from oxidize.semantic.entities import EntityType, extract_entities
 from oxidize.semantic.parser import HAS_TREE_SITTER
 
 

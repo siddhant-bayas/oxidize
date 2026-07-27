@@ -11,7 +11,7 @@ from oxidize.core.repository import Repository, RepositoryNotFound
 console = Console()
 
 
-def _walk(root: Path, matcher: "IgnoreMatcher") -> list[Path]:
+def _walk(root: Path, matcher: IgnoreMatcher) -> list[Path]:
     result = []
     for p in sorted(root.rglob("*")):
         try:
