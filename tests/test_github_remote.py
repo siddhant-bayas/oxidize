@@ -11,28 +11,7 @@ from oxidize.network.github_remote import GitHubRemote, parse_github_url
 from oxidize.network.remote import TransferError
 from oxidize.objects.types import Author, Commit, FileMode, Tree, TreeEntry
 
-
-def _make_commit(
-    repo: Repository, files: dict[str, str], msg: str, parents: list[str] | None = None
-) -> str:
-    author = Author(name="tester", email="t@dev", timestamp=1700000000)
-    entries: list[TreeEntry] = []
-    for name, content in sorted(files.items()):
-        oid = repo.db.store_blob(content.encode())
-        entries.append(TreeEntry(name=name, oid=oid, mode=FileMode.REGULAR))
-    tree = Tree()
-    for e in entries:
-        tree.add(e)
-    repo.db.store_tree(tree)
-    c = Commit(
-        tree_oid=tree.oid,
-        author=author,
-        committer=author,
-        message=msg,
-        parents=parents or [],
-    )
-    repo.db.store_commit(c)
-    return c.oid
+from .conftest import make_commit
 
 
 class TestParseGithubURL:
@@ -121,8 +100,8 @@ class TestGitHubRemotePush:
         Repository.init(src)
         src_repo = Repository(src)
 
-        oid1 = _make_commit(src_repo, {"a.txt": "hello"}, "first")
-        oid2 = _make_commit(src_repo, {"a.txt": "world"}, "second", parents=[oid1])
+        oid1 = make_commit(src_repo, {"a.txt": "hello"}, "first")
+        oid2 = make_commit(src_repo, {"a.txt": "world"}, "second", parents=[oid1])
         src_repo.refs.write("refs/heads/main", oid2)
 
         remote = GitHubRemote("owner", "repo")
@@ -161,10 +140,10 @@ class TestGitHubRemotePush:
         Repository.init(src)
         src_repo = Repository(src)
 
-        base = _make_commit(src_repo, {"a.txt": "base"}, "base")
-        left = _make_commit(src_repo, {"a.txt": "left"}, "left", parents=[base])
-        right = _make_commit(src_repo, {"a.txt": "right"}, "right", parents=[base])
-        merge = _make_commit(src_repo, {"a.txt": "merged"}, "merge", parents=[left, right])
+        base = make_commit(src_repo, {"a.txt": "base"}, "base")
+        left = make_commit(src_repo, {"a.txt": "left"}, "left", parents=[base])
+        right = make_commit(src_repo, {"a.txt": "right"}, "right", parents=[base])
+        merge = make_commit(src_repo, {"a.txt": "merged"}, "merge", parents=[left, right])
         src_repo.refs.write("refs/heads/main", merge)
 
         remote = GitHubRemote("owner", "repo")
@@ -242,7 +221,7 @@ class TestGitHubRemotePush:
         Repository.init(src)
         src_repo = Repository(src)
 
-        oid1 = _make_commit(src_repo, {"a.txt": "v1", "b.txt": "v2"}, "first")
+        oid1 = make_commit(src_repo, {"a.txt": "v1", "b.txt": "v2"}, "first")
         src_repo.refs.write("refs/heads/main", oid1)
 
         remote = GitHubRemote("owner", "repo")
@@ -264,7 +243,7 @@ class TestGitHubRemotePush:
             remote.push(src_repo, "main")
             first_export_count = len(export_calls)
 
-        oid2 = _make_commit(
+        oid2 = make_commit(
             src_repo, {"a.txt": "v1", "b.txt": "v2", "c.txt": "v3"}, "second", parents=[oid1]
         )
         src_repo.refs.write("refs/heads/main", oid2)

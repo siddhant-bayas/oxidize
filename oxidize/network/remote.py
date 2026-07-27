@@ -26,15 +26,14 @@ def _has_objects(objects_dir: Path) -> bool:
 
 def _bulk_copy_objects(src_root: Path, dst_root: Path) -> None:
     src_objects = src_root / "objects"
-    dst_objects = dst_root
     if not src_objects.exists():
         return
     for sub in src_objects.iterdir():
         if not sub.is_dir():
             continue
-        (dst_objects / sub.name).mkdir(parents=True, exist_ok=True)
+        (dst_root / sub.name).mkdir(parents=True, exist_ok=True)
         for obj in sub.iterdir():
-            dst = dst_objects / sub.name / obj.name
+            dst = dst_root / sub.name / obj.name
             _atomic_write(dst, partial(shutil.copy2, obj))
 
 

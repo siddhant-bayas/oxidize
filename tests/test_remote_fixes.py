@@ -8,28 +8,7 @@ from oxidize.core.repository import Repository
 from oxidize.network.remote import Remote, TransferError, _is_ancestor
 from oxidize.objects.types import Author, Commit, FileMode, Tree, TreeEntry
 
-
-def _make_commit(
-    repo: Repository, files: dict[str, str], msg: str, parents: list[str] | None = None
-) -> str:
-    author = Author(name="tester", email="t@dev", timestamp=1700000000)
-    entries: list[TreeEntry] = []
-    for name, content in sorted(files.items()):
-        oid = repo.db.store_blob(content.encode())
-        entries.append(TreeEntry(name=name, oid=oid, mode=FileMode.REGULAR))
-    tree = Tree()
-    for e in entries:
-        tree.add(e)
-    repo.db.store_tree(tree)
-    c = Commit(
-        tree_oid=tree.oid,
-        author=author,
-        committer=author,
-        message=msg,
-        parents=parents or [],
-    )
-    repo.db.store_commit(c)
-    return c.oid
+from .conftest import make_commit
 
 
 def test_clone_preserves_all_objects(tmp_path: Path) -> None:
@@ -37,8 +16,8 @@ def test_clone_preserves_all_objects(tmp_path: Path) -> None:
     Repository.init(src)
     src_repo = Repository(src)
 
-    oid1 = _make_commit(src_repo, {"a.txt": "hello"}, "first")
-    oid2 = _make_commit(src_repo, {"a.txt": "world", "b.txt": "new"}, "second", parents=[oid1])
+    oid1 = make_commit(src_repo, {"a.txt": "hello"}, "first")
+    oid2 = make_commit(src_repo, {"a.txt": "world", "b.txt": "new"}, "second", parents=[oid1])
     src_repo.refs.write("refs/heads/main", oid2)
 
     remote_path = tmp_path / "remote"
@@ -67,7 +46,7 @@ def test_clone_preserves_all_objects(tmp_path: Path) -> None:
 def test_clone_detached_head(tmp_path: Path) -> None:
     src = tmp_path / "src"
     src_repo = Repository.init(src)
-    oid = _make_commit(src_repo, {"a.txt": "hi"}, "only")
+    oid = make_commit(src_repo, {"a.txt": "hi"}, "only")
     src_repo.refs.write("refs/heads/main", oid)
 
     bare = src / ".bare"
@@ -85,7 +64,7 @@ def test_clone_detached_head(tmp_path: Path) -> None:
 def test_push_diverges_raises(tmp_path: Path) -> None:
     src = tmp_path / "src"
     src_repo = Repository.init(src)
-    oid1 = _make_commit(src_repo, {"a.txt": "v1"}, "first")
+    oid1 = make_commit(src_repo, {"a.txt": "v1"}, "first")
     src_repo.refs.write("refs/heads/main", oid1)
 
     remote = Remote(str(tmp_path / "remote"))
@@ -95,7 +74,7 @@ def test_push_diverges_raises(tmp_path: Path) -> None:
     diverged_oid = "b" * 64
     (bare / "refs" / "heads" / "main").write_text(diverged_oid + "\n")
 
-    oid2 = _make_commit(src_repo, {"a.txt": "v2"}, "second", parents=[oid1])
+    oid2 = make_commit(src_repo, {"a.txt": "v2"}, "second", parents=[oid1])
     src_repo.refs.write("refs/heads/main", oid2)
 
     with pytest.raises(TransferError, match="diverges"):
@@ -105,7 +84,7 @@ def test_push_diverges_raises(tmp_path: Path) -> None:
 def test_push_force_diverges_succeeds(tmp_path: Path) -> None:
     src = tmp_path / "src"
     src_repo = Repository.init(src)
-    oid1 = _make_commit(src_repo, {"a.txt": "v1"}, "first")
+    oid1 = make_commit(src_repo, {"a.txt": "v1"}, "first")
     src_repo.refs.write("refs/heads/main", oid1)
 
     remote = Remote(str(tmp_path / "remote"))
@@ -115,7 +94,7 @@ def test_push_force_diverges_succeeds(tmp_path: Path) -> None:
     diverged_oid = "b" * 64
     (bare / "refs" / "heads" / "main").write_text(diverged_oid + "\n")
 
-    oid2 = _make_commit(src_repo, {"a.txt": "v2"}, "second", parents=[oid1])
+    oid2 = make_commit(src_repo, {"a.txt": "v2"}, "second", parents=[oid1])
     src_repo.refs.write("refs/heads/main", oid2)
 
     pushed = remote.push(src_repo, "main", force=True)
@@ -131,7 +110,7 @@ def test_pull_deep_repo_all_objects(tmp_path: Path) -> None:
     oids = []
     parent = None
     for i in range(60):
-        oid = _make_commit(src_repo, {"a.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else [])
+        oid = make_commit(src_repo, {"a.txt": f"v{i}"}, f"commit {i}", parents=[parent] if parent else [])
         oids.append(oid)
         parent = oid
     src_repo.refs.write("refs/heads/main", oids[-1])
@@ -155,9 +134,9 @@ def test_pull_deep_repo_all_objects(tmp_path: Path) -> None:
 
 def test_is_ancestor_linear(tmp_path: Path) -> None:
     repo = Repository.init(tmp_path / "a")
-    oid1 = _make_commit(repo, {"a.txt": "1"}, "c1")
-    oid2 = _make_commit(repo, {"a.txt": "2"}, "c2", parents=[oid1])
-    oid3 = _make_commit(repo, {"a.txt": "3"}, "c3", parents=[oid2])
+    oid1 = make_commit(repo, {"a.txt": "1"}, "c1")
+    oid2 = make_commit(repo, {"a.txt": "2"}, "c2", parents=[oid1])
+    oid3 = make_commit(repo, {"a.txt": "3"}, "c3", parents=[oid2])
 
     assert _is_ancestor(repo, oid1, oid3)
     assert _is_ancestor(repo, oid2, oid3)
@@ -166,10 +145,10 @@ def test_is_ancestor_linear(tmp_path: Path) -> None:
 
 def test_is_ancestor_merge(tmp_path: Path) -> None:
     repo = Repository.init(tmp_path / "b")
-    base = _make_commit(repo, {"a.txt": "base"}, "base")
-    left = _make_commit(repo, {"a.txt": "left"}, "left", parents=[base])
-    right = _make_commit(repo, {"a.txt": "right"}, "right", parents=[base])
-    merge = _make_commit(repo, {"a.txt": "merged"}, "merge", parents=[left, right])
+    base = make_commit(repo, {"a.txt": "base"}, "base")
+    left = make_commit(repo, {"a.txt": "left"}, "left", parents=[base])
+    right = make_commit(repo, {"a.txt": "right"}, "right", parents=[base])
+    merge = make_commit(repo, {"a.txt": "merged"}, "merge", parents=[left, right])
 
     assert _is_ancestor(repo, base, merge)
     assert _is_ancestor(repo, left, merge)
@@ -227,13 +206,13 @@ def test_incremental_push_only_copies_new_objects(tmp_path: Path) -> None:
     Repository.init(src)
     src_repo = Repository(src)
 
-    oid1 = _make_commit(src_repo, {"a.txt": "first"}, "first")
+    oid1 = make_commit(src_repo, {"a.txt": "first"}, "first")
     src_repo.refs.write("refs/heads/main", oid1)
 
     remote = Remote(str(tmp_path / "remote"))
     remote.push(src_repo, "main")
 
-    oid2 = _make_commit(src_repo, {"a.txt": "second"}, "second", parents=[oid1])
+    oid2 = make_commit(src_repo, {"a.txt": "second"}, "second", parents=[oid1])
     src_repo.refs.write("refs/heads/main", oid2)
 
     pushed = remote.push(src_repo, "main")
