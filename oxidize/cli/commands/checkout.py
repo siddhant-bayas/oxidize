@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import click
@@ -9,6 +10,7 @@ from oxidize.core.repository import Repository, RepositoryNotFound
 from oxidize.objects.types import Tree
 
 console = Console()
+logger = logging.getLogger(__name__)
 
 
 @click.command("checkout")
@@ -61,9 +63,12 @@ def _detach(repo: Repository, oid: str) -> None:
 
 
 def _restore_work_tree(repo: Repository, target_oid: str, force: bool) -> None:
-    if not force and any(_is_dirty(p, repo.work_tree) for p in repo.work_tree.iterdir()):
-        if not _staged_or_untracked(repo):
-            raise click.ClickException("local changes would be overwritten (use -f to discard)")
+    if (
+        not force
+        and any(_is_dirty(p, repo.work_tree) for p in repo.work_tree.iterdir())
+        and not _staged_or_untracked(repo)
+    ):
+        raise click.ClickException("local changes would be overwritten (use -f to discard)")
     commit = repo.db.load_commit(target_oid)
     tree = repo.db.load_tree(commit.tree_oid)
     _write_tree(repo, tree, repo.work_tree)
@@ -83,7 +88,8 @@ def _write_tree(repo: Repository, tree: Tree, root: Path) -> None:
         if entry.mode.value != "040000":
             try:
                 blob = repo.db.load_blob(entry.oid)
-            except Exception:
+            except KeyError:
+                logger.warning("missing blob %s, skipping %s", entry.oid, entry.name)
                 continue
             target = root / entry.name
             target.parent.mkdir(parents=True, exist_ok=True)

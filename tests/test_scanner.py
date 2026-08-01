@@ -7,7 +7,7 @@ from click.testing import CliRunner
 
 from oxidize.cli.main import cli
 from oxidize.core.repository import Repository
-from oxidize.security.scanner import scan_directory, scan_file, scan_text, PATTERNS
+from oxidize.security.scanner import PATTERNS, scan_directory, scan_file, scan_text
 
 
 def _stripe_key() -> str:
@@ -71,7 +71,7 @@ def test_scan_line_numbers() -> None:
 
 def test_patterns_are_compiled() -> None:
     assert len(PATTERNS) > 10
-    for name, pattern in PATTERNS.items():
+    for pattern in PATTERNS.values():
         assert isinstance(pattern, str)
         assert len(pattern) > 5
 

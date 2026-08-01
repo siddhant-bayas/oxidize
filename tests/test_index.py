@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from oxidize.index.staging import Index
 
 

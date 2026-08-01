@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from oxidize.semantic.entities import EntityType, EntitySnapshot, extract_entities
+from oxidize.semantic.entities import EntitySnapshot, EntityType, extract_entities
 
 
 @dataclass(frozen=True)

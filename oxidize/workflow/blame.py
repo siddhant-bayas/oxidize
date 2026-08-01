@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import logging
+
 from oxidize.core.repository import Repository
 from oxidize.objects.types import Tree
+
+logger = logging.getLogger(__name__)
 
 
 class Blamer:
@@ -15,7 +19,8 @@ class Blamer:
                 commit = self._repo.db.load_commit(oid)
                 tree = self._repo.db.load_tree(commit.tree_oid)
                 blob_text = self._blob_for_path(tree, path)
-            except Exception:
+            except KeyError:
+                logger.warning("missing object for commit %s, skipping", oid)
                 continue
             if blob_text is None:
                 continue
@@ -36,7 +41,8 @@ class Blamer:
             out.append(oid)
             try:
                 commit = self._repo.db.load_commit(oid)
-            except Exception:
+            except KeyError:
+                logger.warning("missing commit %s, stopping history walk", oid)
                 continue
             stack.extend(commit.parents)
         return out
@@ -53,13 +59,13 @@ class Blamer:
                     return None
                 try:
                     blob = self._repo.db.load_blob(entry.oid)
-                except Exception:
+                except KeyError:
                     return None
                 return blob.data.decode(errors="replace")
             if entry.mode.value != "040000":
                 return None
             try:
                 node = self._repo.db.load_tree(entry.oid)
-            except Exception:
+            except KeyError:
                 return None
         return None

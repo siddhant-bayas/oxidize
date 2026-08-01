@@ -47,7 +47,9 @@ def cmd_log(count: int, agent: str | None, author: str | None, oneline: bool) ->
                 f"[yellow]{oid[:8]}[/] {commit.message.strip().splitlines()[0]}{agent_str}"
             )
         else:
-            dt = datetime.datetime.fromtimestamp(commit.author.timestamp)
+            dt = datetime.datetime.fromtimestamp(
+                commit.author.timestamp, tz=datetime.UTC
+            ).astimezone()
             date_str = dt.strftime("%a %b %d %H:%M:%S %Y")
             console.print(f"[yellow]commit {oid}[/]")
             console.print(f"Author: {commit.author.name} <{commit.author.email}>")

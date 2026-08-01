@@ -1,4 +1,4 @@
-from oxidize.diff.engine import diff_lines, LineOp
+from oxidize.diff.engine import LineOp, diff_lines
 
 
 def test_identical() -> None:

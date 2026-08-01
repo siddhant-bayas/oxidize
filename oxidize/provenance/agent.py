@@ -28,7 +28,6 @@ class AgentRecord:
             message=str(d["message"]),
             prompt_id=str(d["prompt_id"]) if d.get("prompt_id") else None,
         )
-        return cls(**d)
 
 
 class ProvenanceStore:

@@ -38,7 +38,7 @@ def test_three_way_conflict() -> None:
     base = {"x": 1}
     ours = {"x": 2}
     theirs = {"x": 3}
-    result, conflicts = three_way_merge(base, ours, theirs)
+    _, conflicts = three_way_merge(base, ours, theirs)
     assert len(conflicts) == 1
     assert "x" in conflicts
 
@@ -65,6 +65,6 @@ def test_three_way_nested_conflict() -> None:
     base = {"db": {"host": "localhost", "port": 5432}}
     ours = {"db": {"port": 5433}}
     theirs = {"db": {"port": 5434}}
-    result, conflicts = three_way_merge(base, ours, theirs)
+    _, conflicts = three_way_merge(base, ours, theirs)
     assert len(conflicts) == 1
     assert "db.port" in conflicts

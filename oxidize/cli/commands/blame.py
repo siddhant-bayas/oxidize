@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import click
@@ -9,6 +10,7 @@ from oxidize.core.repository import Repository, RepositoryNotFound
 from oxidize.workflow.blame import Blamer
 
 console = Console()
+logger = logging.getLogger(__name__)
 
 
 @click.command("blame")
@@ -45,7 +47,8 @@ def _author_lookup(repo: Repository, oids: set[str]) -> dict[str, str]:
     for oid in oids:
         try:
             commit = repo.db.load_commit(oid)
-        except Exception:
+        except KeyError:
+            logger.warning("missing commit %s, skipping author lookup", oid)
             continue
         full = oid
         out[full[:8]] = commit.author.name.split()[0]

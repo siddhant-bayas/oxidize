@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import shutil
 from pathlib import Path
 
 from oxidize.core.repository import Repository
+
+logger = logging.getLogger(__name__)
 
 
 class TransferError(Exception):
@@ -129,12 +132,14 @@ def _copy_objects(
         if repo:
             try:
                 commit = repo.db.load_commit(oid)
-            except Exception:
+            except KeyError:
+                logger.warning("missing commit %s while copying objects", oid)
                 continue
             stack.extend(commit.parents)
             try:
                 tree = repo.db.load_tree(commit.tree_oid)
-            except Exception:
+            except KeyError:
+                logger.warning("missing tree %s while copying objects", commit.tree_oid)
                 continue
             for entry in tree:
                 stack.append(entry.oid)
@@ -180,12 +185,14 @@ def _reachable_oids(repo: Repository, starting: list[str], *, limit: int) -> lis
         out.append(oid)
         try:
             commit = repo.db.load_commit(oid)
-        except Exception:
+        except KeyError:
+            logger.warning("missing commit %s while collecting reachable oids", oid)
             continue
         stack.extend(commit.parents)
         try:
             tree = repo.db.load_tree(commit.tree_oid)
-        except Exception:
+        except KeyError:
+            logger.warning("missing tree %s while collecting reachable oids", commit.tree_oid)
             continue
         for entry in tree:
             stack.append(entry.oid)

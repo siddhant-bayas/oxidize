@@ -104,6 +104,7 @@ def _dispatch(line: str) -> str | None:
 
     try:
         from click.testing import CliRunner
+
         from oxidize.cli.main import cli
 
         runner = CliRunner()
@@ -111,7 +112,7 @@ def _dispatch(line: str) -> str | None:
         return result.output
     except SystemExit as e:
         return f"(exit code {e.code})" if e.code else None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001  # intentional REPL catch-all
         return f"error: {e}"
 
 
