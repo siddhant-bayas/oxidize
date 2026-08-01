@@ -39,3 +39,10 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --title "v${{ steps.version.outputs.version }}" \
             --generate-notes
+
+      - name: trigger pypi publish
+        if: steps.version.outputs.released == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run pypi.yml --repo "$GITHUB_REPOSITORY" --ref main
