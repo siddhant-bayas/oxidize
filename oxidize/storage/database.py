@@ -11,7 +11,7 @@ class ObjectDatabase:
         self._backend = backend
 
     @classmethod
-    def filesystem(cls, objects_dir: Path) -> "ObjectDatabase":
+    def filesystem(cls, objects_dir: Path) -> ObjectDatabase:
         return cls(FilesystemBackend(objects_dir))
 
     def store_blob(self, data: bytes) -> str:

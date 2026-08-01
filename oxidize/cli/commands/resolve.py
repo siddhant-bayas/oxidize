@@ -90,7 +90,7 @@ def _interactive(p: Path) -> None:
     else:
         _take_side(p, take_theirs=True)
     if Confirm.ask(f"  stage {p.name}?", default=True):
-        p.relative_to  # touch
+        _ = p.relative_to  # touch
 
 
 def _take_side(p: Path, take_theirs: bool) -> None:

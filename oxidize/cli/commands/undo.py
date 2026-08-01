@@ -59,7 +59,7 @@ def cmd_journal() -> None:
         console.print(f"  [{seq:>3}] [dim]{dt}[/]  [cyan]{entry.op:<14}[/]  {detail}")
 
 
-def _summarize(entry: "JournalEntry") -> str:
+def _summarize(entry: JournalEntry) -> str:
     data = getattr(entry, "data", None) or {}
     op = getattr(entry, "op", "?")
     if op == "add":

@@ -88,6 +88,6 @@ def midpoint(repo: Repository, good: str, bad: str) -> str:
     return reverse[halfway if halfway < len(reverse) else len(reverse) - 1]
 
 
-def _repo_for(state: "BisectState") -> Repository:
+def _repo_for(state: BisectState) -> Repository:
     """stub: bisect module doesn't hold a repo handle; callers should pass one explicitly."""
     raise RuntimeError("bisect requires a Repository; pass it explicitly to midpoint()")

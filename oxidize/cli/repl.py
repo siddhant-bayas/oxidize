@@ -104,6 +104,7 @@ def _dispatch(line: str) -> str | None:
 
     try:
         from click.testing import CliRunner
+
         from oxidize.cli.main import cli
 
         runner = CliRunner()

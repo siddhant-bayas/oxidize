@@ -1,40 +1,68 @@
 # remote sync
 
-> ⚠ remote support is **filesystem-only** for now. Network protocols (HTTP, SSH) are not implemented yet.
+two backends: **filesystem** (full clone/push/pull) and **github** (push-only export via REST API).
 
 ```
-oxidize remote clone <url> [target]    # "clone" from a bare directory
-oxidize remote push <url> [branch]     # copy objects + refs to the remote
-oxidize remote pull <url> [branch]     # fetch from the remote
+oxidize remote clone <url> [target]
+oxidize remote push  <url> [branch]
+oxidize remote pull  <url> [branch]
 ```
 
-`<url>` accepts any path that resolves to a directory containing `.oxidize/` (or to a bare directory with `HEAD` and `refs/`). A bare directory is auto-initialised on first push.
+## filesystem remote
+
+`<url>` is any path to a directory. the remote is auto-initialized on first push as a bare repo.
 
 ```
-oxidize remote push file:///srv/oxidize/myproj main
+oxidize remote push file:///srv/backup/myproj main
 ```
 
-**scope of v1**:
-- objects are copied by sha256-prefix directory (`<aa>/<rest>`), de-duplicated by name
-- `refs/heads/<branch>` is mirrored; one side per push unless `--force`
+- objects copied by sha256 prefix, deduplicated by name
+- atomic writes via temp-file-then-replace (no corrupt objects on crash)
+- subtree-aware walk: nested directories are fully copied
+- empty-destination fast path: first push/pull skips graph walk entirely
 - `--force` overwrites divergent refs
 
-**not in this scope**:
-- remote tracking refs (`refs/remotes/<name>/*`)
-- pull-request / webhook semantics
-- LFS-style large-file hand-off
-- any network transport beyond the local filesystem
-
-`oxidize.network.remote.Remote` is the underlying class. Use it programmatically:
+### programmatic usage
 
 ```python
 from pathlib import Path
-from oxidize.core.repository import Repository
 from oxidize.network.remote import Remote
 
-src = Repository(Path("."))
-dst = Repository(Path("/backup"))
-remote = Remote("/backup")
-remote.push(src, "main")
-remote.pull(dst, "main")
+remote = Remote("file:///srv/backup")
+repo = Repository(Path("."))
+remote.push(repo, "main")
 ```
+
+## github remote
+
+push-only export to a github repo via the Git Data REST API. no local `git` needed.
+
+```
+oxidize remote push https://github.com/user/repo.git main
+```
+
+set `OXIDIZE_GITHUB_TOKEN` in your environment (fine-grained PAT with `contents: write`).
+
+how it works:
+- oxidize objects use SHA-256, git uses SHA-1. an export map (`.oxidize/github_export_map.json`) tracks the mapping.
+- blobs are pushed first (deduplicated by content). trees and commits are created via the GitHub API.
+- the branch ref is updated at the end.
+- 429 / 403 rate limits are retried with exponential backoff.
+
+### programmatic usage
+
+```python
+from oxidize.network.github_remote import GitHubRemote
+
+gh = GitHubRemote("user", "repo")
+gh.push(repo, branch="main")
+```
+
+clone and pull from github are **not supported**. use `git clone` to fetch, then `oxidize` locally.
+
+## not in v1
+
+- remote tracking refs
+- pull-request / webhook semantics
+- LFS
+- network transport beyond filesystem and github REST

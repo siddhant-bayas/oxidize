@@ -54,9 +54,7 @@ def _is_placeholder(matched: str) -> bool:
         if q.lower().strip() in _PLACEHOLDER_TOKENS:
             return True
     stripped = matched.strip().strip("\"' ")
-    if stripped.lower() in _PLACEHOLDER_TOKENS:
-        return True
-    return False
+    return stripped.lower() in _PLACEHOLDER_TOKENS
 
 
 _IGNORE_DIRS = {
@@ -161,7 +159,7 @@ def scan_file(path: Path, root: Path, *, is_ignored: bool = False) -> list[dict[
 
 def scan_directory(
     root: Path,
-    ignore_matcher: "IgnoreMatcher | None" = None,
+    ignore_matcher: IgnoreMatcher | None = None,
 ) -> list[dict[str, str | int]]:
     findings: list[dict[str, str | int]] = []
     for p in sorted(root.rglob("*")):
@@ -182,7 +180,7 @@ def scan_directory(
 def scan_paths(
     paths: list[Path],
     root: Path,
-    ignore_matcher: "IgnoreMatcher | None" = None,
+    ignore_matcher: IgnoreMatcher | None = None,
 ) -> list[dict[str, str | int]]:
     findings: list[dict[str, str | int]] = []
     for p in paths:

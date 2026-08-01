@@ -92,6 +92,10 @@ committer {Author string}
 - `author` and `committer` use the format: `Name <email> timestamp tz_offset`
 - blank line separates header from message
 
+## atomic writes
+
+object writes are atomic: data goes to a temp file first, then `os.replace()` swaps it into place. interrupted writes never leave a corrupt object behind — the temp file is cleaned up on failure.
+
 ## storage backend
 
 the default `FilesystemBackend` stores objects on disk. but `StorageBackend` is abstract -- you can implement custom backends:

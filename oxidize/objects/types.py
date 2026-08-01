@@ -3,9 +3,9 @@ from __future__ import annotations
 import hashlib
 import stat
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Iterator
 
 
 class ObjectType(str, Enum):
@@ -31,7 +31,7 @@ class Blob:
         return self.data
 
     @classmethod
-    def deserialize(cls, data: bytes) -> "Blob":
+    def deserialize(cls, data: bytes) -> Blob:
         return cls(data=data)
 
 
@@ -41,7 +41,7 @@ class FileMode(str, Enum):
     DIRECTORY = "040000"
 
     @classmethod
-    def from_stat(cls, st_mode: int) -> "FileMode":
+    def from_stat(cls, st_mode: int) -> FileMode:
         if stat.S_ISDIR(st_mode):
             return cls.DIRECTORY
         if st_mode & stat.S_IXUSR:
@@ -73,7 +73,7 @@ class Tree:
         return b"".join(parts)
 
     @classmethod
-    def deserialize(cls, data: bytes) -> "Tree":
+    def deserialize(cls, data: bytes) -> Tree:
         tree = cls()
         i = 0
         while i < len(data):
@@ -101,7 +101,7 @@ class Author:
         return f"{self.name} <{self.email}> {self.timestamp} {self.tz_offset}"
 
     @classmethod
-    def from_str(cls, s: str) -> "Author":
+    def from_str(cls, s: str) -> Author:
         # "Name <email> timestamp tz"
         lt = s.index("<")
         gt = s.index(">")
@@ -137,7 +137,7 @@ class Commit:
         return "\n".join(lines).encode()
 
     @classmethod
-    def deserialize(cls, data: bytes) -> "Commit":
+    def deserialize(cls, data: bytes) -> Commit:
         text = data.decode()
         header, _, message = text.partition("\n\n")
         fields: dict[str, str] = {}

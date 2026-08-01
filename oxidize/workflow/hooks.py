@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import subprocess
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 from oxidize.core.repository import Repository
 
@@ -82,6 +82,7 @@ class Hooks:
                 capture_output=True,
                 env={**__import__("os").environ, **(env or {})},
                 text=True,
+                check=False,
             )
         except OSError as e:
             return HookResult(name=name, exit_code=127, stdout="", stderr=str(e))
