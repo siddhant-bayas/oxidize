@@ -57,6 +57,7 @@ oxidize/
   security/      secret scanning (21 patterns)
   provenance/    ai agent tracking
   undo/          operation journal and reversal
+  network/       filesystem + github remote sync
   cli/           click commands and prompt_toolkit repl
 ```
 
