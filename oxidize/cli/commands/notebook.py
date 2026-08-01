@@ -74,7 +74,7 @@ def _resolve(repo: Repository, raw: str) -> Path | None:
     try:
         commit = repo.db.load_commit(head)
         tree: Tree = repo.db.load_tree(commit.tree_oid)
-    except Exception:
+    except KeyError:
         return None
     rel = raw
     sub: list[str] = rel.split("/")
@@ -96,7 +96,7 @@ def _walk_tree(
                     return None
                 try:
                     blob = repo.db.load_blob(entry.oid)
-                except Exception:
+                except KeyError:
                     return None
                 target = repo.work_tree / "/".join(parents + [entry.name])
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -106,7 +106,7 @@ def _walk_tree(
                 return None
             try:
                 subtree: Tree = repo.db.load_tree(entry.oid)
-            except Exception:
+            except KeyError:
                 return None
             return _walk_tree(repo, subtree, parts[1:], parents + [entry.name])
     return None

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from rich.console import Console
@@ -9,6 +10,7 @@ from oxidize.core.repository import Repository
 from oxidize.objects.types import Tree
 
 console = Console()
+logger = logging.getLogger(__name__)
 
 
 def _walk(root: Path, matcher: type[IgnoreMatcher] = IgnoreMatcher) -> list[Path]:
@@ -33,7 +35,8 @@ def _find_merge_base(repo: Repository, a: str, b: str) -> str | None:
         seen_b.add(oid)
         try:
             commit = repo.db.load_commit(oid)
-        except Exception:
+        except KeyError:
+            logger.warning("missing commit %s while finding merge base", oid)
             continue
         stack.extend(commit.parents)
     if a in seen_b:
@@ -49,7 +52,8 @@ def _find_merge_base(repo: Repository, a: str, b: str) -> str | None:
             return oid
         try:
             commit = repo.db.load_commit(oid)
-        except Exception:
+        except KeyError:
+            logger.warning("missing commit %s while finding merge base", oid)
             continue
         stack.extend(commit.parents)
     return None
@@ -59,7 +63,7 @@ def _list_tree_paths(repo: Repository, tree_oid: str, base: Path = Path("")) -> 
     out: list[str] = []
     try:
         tree = repo.db.load_tree(tree_oid)
-    except Exception:
+    except KeyError:
         return out
     for entry in tree:
         rel = (base / entry.name).as_posix() if base.as_posix() else entry.name
@@ -73,7 +77,7 @@ def _list_tree_paths(repo: Repository, tree_oid: str, base: Path = Path("")) -> 
 def _blob_text(repo: Repository, tree_oid: str, path: str) -> tuple[str | None, bool]:
     try:
         tree = repo.db.load_tree(tree_oid)
-    except Exception:
+    except KeyError:
         return None, False
     parts = path.split("/")
     return _walk_tree_for_blob(repo, tree, parts)
@@ -95,14 +99,14 @@ def _walk_tree_for_blob(
                     return None, True
                 try:
                     blob = repo.db.load_blob(entry.oid)
-                except Exception:
+                except KeyError:
                     return None, True
                 return blob.data.decode(errors="replace"), True
             if entry.mode.value != "040000":
                 return None, False
             try:
                 subtree = repo.db.load_tree(entry.oid)
-            except Exception:
+            except KeyError:
                 return None, False
             return _walk_tree_for_blob(repo, subtree, parts, idx + 1)
     return None, False

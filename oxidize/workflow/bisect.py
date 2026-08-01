@@ -66,7 +66,7 @@ def _list_commits(
     out = [oid]
     try:
         commit = repo.db.load_commit(oid)
-    except Exception:
+    except KeyError:
         return out
     for parent_oid in commit.parents:
         out.extend(_list_commits(repo, parent_oid, seen, depth + 1, max_depth))

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 from rich.console import Console
-from rich.prompt import Confirm, Prompt
+from rich.prompt import Prompt
 
 from oxidize.core.repository import Repository, RepositoryNotFound
 from oxidize.merge.text import is_conflict
@@ -89,8 +89,6 @@ def _interactive(p: Path) -> None:
         _take_side(p, take_theirs=False)
     else:
         _take_side(p, take_theirs=True)
-    if Confirm.ask(f"  stage {p.name}?", default=True):
-        _ = p.relative_to  # touch
 
 
 def _take_side(p: Path, take_theirs: bool) -> None:

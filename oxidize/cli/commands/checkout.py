@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import click
@@ -9,6 +10,7 @@ from oxidize.core.repository import Repository, RepositoryNotFound
 from oxidize.objects.types import Tree
 
 console = Console()
+logger = logging.getLogger(__name__)
 
 
 @click.command("checkout")
@@ -86,7 +88,8 @@ def _write_tree(repo: Repository, tree: Tree, root: Path) -> None:
         if entry.mode.value != "040000":
             try:
                 blob = repo.db.load_blob(entry.oid)
-            except Exception:
+            except KeyError:
+                logger.warning("missing blob %s, skipping %s", entry.oid, entry.name)
                 continue
             target = root / entry.name
             target.parent.mkdir(parents=True, exist_ok=True)

@@ -95,7 +95,7 @@ def _enumerate_paths(repo: Repository, tree_oid: str) -> set[str]:
 def _walk(repo: Repository, tree_oid: str, paths: set[str], prefix: str = "") -> None:
     try:
         tree = repo.db.load_tree(tree_oid)
-    except Exception:
+    except KeyError:
         return
     for entry in tree:
         rel = f"{prefix}/{entry.name}" if prefix else entry.name
