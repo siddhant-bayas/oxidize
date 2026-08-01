@@ -114,7 +114,7 @@ oxidize undo journal
 ```python
 from pathlib import Path
 from oxidize.core.repository import Repository
-from oxidize.undo.reverser import UndoManager
+from oxidize.undo import UndoManager
 
 repo = Repository.discover(Path("."))
 undo_mgr = UndoManager(repo)

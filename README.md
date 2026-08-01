@@ -56,10 +56,10 @@ oxidize is **not** a git replacement for big teams or monorepos. it's a focused,
 | bisect | beta | v0.1.0 |
 | hooks (`pre-commit`, etc) | beta | v0.1.0 |
 | blame (line-level) | beta | v0.1.0 |
-| remote sync (filesystem + github push) | beta | v0.1.0 |
+| remote sync (filesystem clone/push/pull) | stable | v0.1.0 |
 | semantic diffs (AST-aware, `tree-sitter`) | alpha | v0.2.1 |
 | ai-agent prose locking + qa | (planning) | -- |
-| network remotes (github REST, push-only) | alpha | v0.2.2 |
+| network remotes (github REST, push-only) | beta | v0.2.2 |
 | LFS-style large-file extension | not yet | -- |
 | submodule support | not yet | -- |
 

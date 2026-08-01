@@ -2,7 +2,7 @@
 
 all notable changes to this project are documented here. format follows [keep a changelog](https://keepachangelog.com).
 
-## [unreleased]
+## [0.2.3] — 2026-08-01
 
 ### added
 - placeholder denylist for the secret scanner (skips common fake or template tokens like `changeme`, `your_*_here`, `xxx`, `replace_me`, etc., and whole-file skip for `.env.example`, `.env.sample`, `.env.template`)
@@ -12,10 +12,14 @@ all notable changes to this project are documented here. format follows [keep a 
 - narrow feature status table in README — most of the surface is "stable", newer subsystems are "beta" or "alpha", and the previously mislabelled "AST-aware" semantic diffs are clarified as required inner state
 - dead `src/main.py` stub removed
 - scanner reads matching are anchored to the match's surrounding context — adjacent placeholder tokens no longer trigger false positive reports
+- all `except Exception` object-load guards narrowed to `except KeyError` (missing objects) so corruption surfaces instead of being silently swallowed
 
 ### fixed
+- `ImportError` when importing `UndoManager` from `oxidize.undo` (it was declared in `__all__` but never imported)
+- unreachable `return cls(**d)` in `AgentRecord.from_dict` removed
 - cross-class method collisions in `extract_entities` are eliminated by switching from bare names (`save`, `__init__`, ...) to qualified paths (`MyClass.save`); same-named methods on different classes are now compared independently
 - pyoxidize install size badge shields url corrected (shields does not accept `~` in the message slot)
+- ruff 0.16 lint conformance (import sorting, `__all__` ordering, `collections.abc` imports, tz-aware timestamps, quote-less annotations, dead expressions)
 
 ## [0.2.0] — 2026-07-15
 
@@ -39,6 +43,6 @@ first release published to PyPI from a prior state of the codebase. rolled forwa
 
 early internal release, never published to PyPI.
 
-[unreleased]: https://github.com/siddhant-bayas/oxidize/compare/v0.2.0...HEAD
+[0.2.3]: https://github.com/siddhant-bayas/oxidize/releases/tag/v0.2.3
 [0.2.0]: https://github.com/siddhant-bayas/oxidize/releases/tag/v0.2.0
 [0.1.0]: https://github.com/siddhant-bayas/oxidize/releases/tag/v0.1.0
