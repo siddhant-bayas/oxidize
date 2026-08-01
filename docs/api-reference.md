@@ -6,7 +6,7 @@ oxidize can be used as a Python library. below is the complete API for every pub
 
 ```python
 import oxidize
-oxidize.__version__  # "0.2.0"
+oxidize.__version__  # "0.2.3"
 ```
 
 ---
@@ -761,6 +761,21 @@ def detect_agent() -> str | None
 ```
 
 checks environment variables to auto-detect the running agent. returns agent name or `None`.
+
+---
+
+## oxidize.undo
+
+public package surface for undo support. re-exports the journal and the undo manager:
+
+```python
+from oxidize.undo import Journal, UndoManager
+
+manager = UndoManager(repo)
+```
+
+- `Journal` — see `oxidize.undo.journal`
+- `UndoManager` — see `oxidize.undo.reverser`
 
 ---
 

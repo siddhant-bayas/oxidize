@@ -122,7 +122,7 @@ oxidize branch create my-fix main                  # branch off freshly-pulled m
 oxidize remote push file:///shared/oxidize my-fix  # publish your branch
 ```
 
-the **filesystem remote** is currently the only transport (`file://` URL). network protocols are not implemented yet -- if your host has `ssh` access, mount it via a directory and use the same URL pattern.
+the **filesystem remote** (`file://` URLs) is the full-featured transport: clone / push / pull over a shared directory. a **github remote** is push-only — export a branch to a github repo via the Git Data REST API (`oxidize remote push https://github.com/user/repo.git <branch>`), no local `git` needed; clone/pull from github are not implemented, use `git clone` for that. there is no generic ssh/http remote yet.
 
 ---
 
@@ -234,7 +234,7 @@ use `oxidize status` (no flag) in script loops: exit code 0 == nothing to commit
 
 | you need | use instead |
 |----------|-------------|
-| HTTP / SSH remote | file-system mount + `file://` URLs, or wait for the network-remote milestone |
+| HTTP / SSH remote | generic network transport is not built yet; use a `file://` remote over a mounted/shared directory, or github push-only REST for one-way export |
 | LFS / large binary blobs | crop the input, use git's LFS, or ask before retrying |
 | submodules | work in a flat layout for now; submodule support is on the roadmap |
 | rename-aware blame | line-level blame only; AST-aware blame is on the roadmap |
@@ -280,7 +280,7 @@ quick lookup, alphabetized:
 | `oxidize log` / `-n N` / `--agent` / `--author` / `--oneline` | commit history |
 | `oxidize merge <branch>` | three-way merge |
 | `oxidize notebook-diff <a> <b>` | cell-level notebook diff |
-| `oxidize pull` / `oxidize push` (via `remote`) | sync over filesystem remote |
+| `oxidize pull` / `oxidize push` (via `remote`) | sync over filesystem remote, or push-only github REST export |
 | `oxidize remote {clone,push,pull}` | remote ops |
 | `oxidize resolve [--all] [--ours|--theirs]` | resolve conflicts |
 | `oxidize scan` | pre-commit secret scanning |
