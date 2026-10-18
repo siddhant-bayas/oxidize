@@ -131,7 +131,7 @@ def test_oxi_scan_respects_oxignore(in_repo: Repository) -> None:
 
     (repo.work_tree / "main.py").write_text(FIXTURE_STRIPE_JOINED)
     found = runner.invoke(cli, ["scan"], catch_exceptions=False)
-    assert found.exit_code == 0, found.output
+    assert found.exit_code == 1, found.output
     assert "main.py" in found.output
 
 
@@ -142,7 +142,7 @@ def test_oxi_scan_no_oxignore_flag_unlocks(in_repo: Repository) -> None:
 
     runner = CliRunner()
     bypass = runner.invoke(cli, ["scan", "--no-oxignore"], catch_exceptions=False)
-    assert bypass.exit_code == 0, bypass.output
+    assert bypass.exit_code == 1, bypass.output
     assert "secret.env" in bypass.output
 
 
