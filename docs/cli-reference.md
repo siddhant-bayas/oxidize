@@ -396,7 +396,7 @@ oxidize remote SUBCOMMAND
 | `--force`, `-f` | overwrite divergent refs |
 
 **backend selection:**
-- `https://github.com/...` or `git@github.com:...` → github REST API (push-only, needs `OXIDIZE_GITHUB_TOKEN`)
+- `https://github.com/...` or `git@github.com:...` → github REST API (clone/push/pull, needs `OXIDIZE_GITHUB_TOKEN`)
 - anything else → filesystem remote (directory path or `file://` URL)
 
 **examples:**

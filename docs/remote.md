@@ -1,6 +1,6 @@
 # remote sync
 
-two backends: **filesystem** (full clone/push/pull) and **github** (push-only export via REST API).
+two backends: **filesystem** (full clone/push/pull) and **github** (clone/push/pull via REST API).
 
 ```
 oxidize remote clone <url> [target]
@@ -35,7 +35,7 @@ remote.push(repo, "main")
 
 ## github remote
 
-push-only export to a github repo via the Git Data REST API. no local `git` needed.
+clone/push/pull to a github repo via the Git Data REST API. no local `git` needed.
 
 ```
 oxidize remote push https://github.com/user/repo.git main

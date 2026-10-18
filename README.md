@@ -59,7 +59,7 @@ oxidize is **not** a git replacement for big teams or monorepos. it's a focused,
 | remote sync (filesystem clone/push/pull) | stable | v0.1.0 |
 | semantic diffs (AST-aware, `tree-sitter`) | alpha | v0.2.1 |
 | ai-agent prose locking + qa | (planning) | -- |
-| network remotes (github REST, push-only) | beta | v0.2.2 |
+| network remotes (github REST clone/push/pull) | beta | v0.2.3 |
 | LFS-style large-file extension | not yet | -- |
 | submodule support | not yet | -- |
 
@@ -107,7 +107,7 @@ launching `oxi` with no args opens a prompt_toolkit REPL with tab completion, hi
 * **branches, tags, checkout, merge, resolve** -- full VCS primitives
 * **stash / bisect / hooks** -- everyday workflow commands
 * **filesystem remote sync** -- bare-repo clone/push/pull with atomic writes
-* **github remote** -- push-only export to github repos via REST API (no git needed)
+* **github remote** -- clone/push/pull to github repos via REST API (no git needed)
 * **semantic diffs (alpha)** -- AST-aware diffs via the `semantic` extra
 
 ## docs

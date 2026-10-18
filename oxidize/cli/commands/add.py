@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 from rich.console import Console
 
+from oxidize import lfs
 from oxidize.core.repository import Repository, RepositoryNotFound
 from oxidize.undo.reverser import UndoManager
 
@@ -52,7 +53,12 @@ def cmd_add(paths: tuple[str, ...], force: bool) -> None:
 
         for file_path in files:
             rel = file_path.relative_to(repo.work_tree).as_posix()
-            oid = repo.db.store_blob(file_path.read_bytes())
+            data = file_path.read_bytes()
+            if lfs.is_large(data):
+                oid, _ = lfs.store(repo, data)
+                click.echo(f"  (lfs) {rel}")
+            else:
+                oid = repo.db.store_blob(data)
             repo.index.add(rel, oid, file_path)
             added_paths.append(rel)
             added_oids.append(oid)

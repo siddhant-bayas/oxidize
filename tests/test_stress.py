@@ -581,7 +581,6 @@ def test_cli_github_clone_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     res = runner.invoke(cli, ["remote", "clone", "https://github.com/owner/repo"])
 
     assert res.exit_code != 0
-    assert "not supported yet" in res.output.lower()
 
 
 def test_cli_github_pull_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -601,4 +600,3 @@ def test_cli_github_pull_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
         os.chdir(old_cwd)
 
     assert res.exit_code != 0
-    assert "push-only" in res.output.lower()

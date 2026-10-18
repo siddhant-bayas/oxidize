@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 import os
 from datetime import UTC
+from pathlib import Path
+from typing import Any
 
 from oxidize.core.repository import Repository
 from oxidize.network.github_api import GitHubAPI
 from oxidize.network.remote import TransferError
-from oxidize.objects.types import Commit, FileMode
+from oxidize.objects.types import Author, Commit, FileMode, Tree, TreeEntry
 
 
 class GitHubRemote:
@@ -21,6 +23,155 @@ class GitHubRemote:
         self.api = GitHubAPI(owner, repo, token)
         self.owner = owner
         self.repo = repo
+
+    def clone(self, target: Path) -> Repository:
+        from oxidize.core.repository import Repository
+
+        target = target.resolve()
+        target.mkdir(parents=True, exist_ok=True)
+        repo = Repository.init(target)
+
+        commit_map: dict[str, str] = {}
+        tree_cache: dict[str, str] = {}
+
+        branches = self.api.get_branches()
+        for b in branches:
+            sha = b["commit"]["sha"]
+            self._import_commit(repo, sha, commit_map, tree_cache)
+
+        for b in branches:
+            name = b["name"]
+            sha = b["commit"]["sha"]
+            if sha not in commit_map:
+                continue
+            ref_path = repo.oxidize_dir / "refs" / "heads" / name
+            ref_path.parent.mkdir(parents=True, exist_ok=True)
+            ref_path.write_text(commit_map[sha] + "\n")
+
+        info = self.api.get_repo()
+        default = info.get("default_branch")
+        if not default and branches:
+            default = branches[0]["name"]
+        if not default:
+            default = "main"
+
+        head_sha = None
+        for b in branches:
+            if b["name"] == default:
+                head_sha = b["commit"]["sha"]
+                break
+        if head_sha is None and branches:
+            head_sha = branches[0]["commit"]["sha"]
+            default = branches[0]["name"]
+
+        repo.refs.set_head_branch(default)
+        (repo.oxidize_dir / "HEAD").write_text(f"ref: refs/heads/{default}\n")
+        if head_sha and head_sha in commit_map:
+            ref_path = repo.oxidize_dir / "refs" / "heads" / default
+            ref_path.parent.mkdir(parents=True, exist_ok=True)
+            ref_path.write_text(commit_map[head_sha] + "\n")
+            head_commit = repo.db.load_commit(commit_map[head_sha])
+            _write_tree(repo, repo.db.load_tree(head_commit.tree_oid), repo.work_tree)
+
+        return repo
+
+    def pull(self, repo: Repository, branch: str | None = None) -> list[str]:
+        commit_map: dict[str, str] = {}
+        tree_cache: dict[str, str] = {}
+        branches = self.api.get_branches()
+        targets = {branch} if branch else {b["name"] for b in branches}
+
+        pulled: list[str] = []
+        for b in branches:
+            name = b["name"]
+            if name not in targets:
+                continue
+            sha = b["commit"]["sha"]
+            ox_oid = self._import_commit(repo, sha, commit_map, tree_cache)
+            ref_path = repo.oxidize_dir / "refs" / "heads" / name
+            ref_path.parent.mkdir(parents=True, exist_ok=True)
+            ref_path.write_text(ox_oid + "\n")
+            pulled.append(name)
+
+        current = repo.refs.current_branch()
+        if current in pulled:
+            head_oid = repo.refs.read(f"refs/heads/{current}")
+            if head_oid:
+                hc = repo.db.load_commit(head_oid)
+                _write_tree(repo, repo.db.load_tree(hc.tree_oid), repo.work_tree)
+
+        return pulled
+
+    def _import_commit(
+        self, repo: Repository, git_sha: str, commit_map: dict[str, str], tree_cache: dict[str, str]
+    ) -> str:
+        if git_sha in commit_map:
+            return commit_map[git_sha]
+        cdata = self.api.get_commit(git_sha)
+        ox_parents: list[str] = []
+        for p in cdata.get("parents", []):
+            ox_parents.append(self._import_commit(repo, p["sha"], commit_map, tree_cache))
+
+        tree_sha = cdata["tree"]["sha"]
+        ox_tree = self._import_tree(repo, tree_sha, tree_cache)
+
+        author = _parse_person(cdata.get("author", {}))
+        committer = _parse_person(cdata.get("committer", {}))
+        message = cdata.get("message", "")
+
+        commit = Commit(
+            tree_oid=ox_tree,
+            author=author,
+            committer=committer,
+            message=message,
+            parents=ox_parents,
+        )
+        repo.db.store_commit(commit)
+        commit_map[git_sha] = commit.oid
+        return commit.oid
+
+    def _import_tree(
+        self, repo: Repository, git_tree_sha: str, cache: dict[str, str]
+    ) -> str:
+        if git_tree_sha in cache:
+            return cache[git_tree_sha]
+
+        tree_data = self.api.get_tree(git_tree_sha, recursive=True)
+        flat = tree_data.get("tree", [])
+
+        dir_sha: dict[str, str] = {"": git_tree_sha}
+        children: dict[str, list[dict[str, Any]]] = {}
+        for e in flat:
+            parent = "/".join(e["path"].split("/")[:-1])
+            children.setdefault(parent, []).append(e)
+            if e.get("type") == "tree":
+                dir_sha[e["path"]] = e["sha"]
+                children.setdefault(e["path"], [])
+
+        # ensure root present
+        children.setdefault("", [])
+
+        dir_ox: dict[str, str] = {}
+        # process deepest first
+        for d in sorted(dir_sha.keys(), key=lambda x: x.count("/"), reverse=True):
+            t = Tree()
+            for e in children.get(d, []):
+                name = e["path"].split("/")[-1]
+                if e.get("type") == "blob":
+                    data = self.api.get_blob(e["sha"])
+                    oid = repo.db.store_blob(data)
+                    t.add(TreeEntry(name=name, oid=oid, mode=FileMode(e.get("mode", "100644"))))
+                elif e.get("type") == "tree":
+                    child_ox = dir_ox.get(e["path"])
+                    if child_ox is None:
+                        # fallback: import subtree
+                        child_ox = self._import_tree(repo, e["sha"], cache)
+                    t.add(TreeEntry(name=name, oid=child_ox, mode=FileMode.DIRECTORY))
+            repo.db.store_tree(t)
+            dir_ox[d] = t.oid
+            cache[dir_sha[d]] = t.oid
+
+        return cache[git_tree_sha]
 
     def push(
         self, repo: Repository, branch: str | None = None, *, force: bool = False
@@ -188,3 +339,37 @@ def parse_github_url(url: str) -> tuple[str, str] | None:
             return parts[0], parts[1]
 
     return None
+
+
+def _parse_person(person: dict[str, Any]) -> Author:
+    from datetime import datetime
+
+    name = person.get("name", "")
+    email = person.get("email", "")
+    date_str = person.get("date")
+    ts = 0
+    if date_str:
+        try:
+            dt = datetime.fromisoformat(date_str)
+            ts = int(dt.timestamp())
+        except ValueError:
+            ts = 0
+    return Author(name=name, email=email, timestamp=ts)
+
+
+def _write_tree(repo: Any, tree: Any, root: Path) -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    for entry in tree:
+        target = root / entry.name
+        if entry.mode.value == "040000":
+            child = repo.db.load_tree(entry.oid)
+            _write_tree(repo, child, target)
+        else:
+            try:
+                from oxidize import lfs
+
+                data = lfs.load_blob_data(repo, entry.oid)
+            except KeyError:
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)

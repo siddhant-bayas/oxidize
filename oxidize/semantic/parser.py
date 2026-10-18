@@ -38,3 +38,25 @@ def parse_source(source: str | bytes) -> Any:
     if isinstance(source, str):
         source = source.encode()
     return parser.parse(source)
+
+
+LANGUAGE_BY_EXTENSION = {
+    ".py": "python",
+    ".js": "javascript",
+    ".jsx": "javascript",
+    ".ts": "typescript",
+    ".tsx": "typescript",
+    ".go": "go",
+    ".rs": "rust",
+    ".java": "java",
+    ".c": "c",
+    ".cpp": "cpp",
+    ".h": "c",
+}
+
+
+def detect_language(path: str) -> str:
+    import os
+
+    _, ext = os.path.splitext(path.lower())
+    return LANGUAGE_BY_EXTENSION.get(ext, "python")

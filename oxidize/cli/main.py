@@ -9,6 +9,7 @@ from oxidize.cli.commands.commit import cmd_commit
 from oxidize.cli.commands.diff import cmd_diff
 from oxidize.cli.commands.hooks import cmd_hooks
 from oxidize.cli.commands.ignores import cmd_ignores
+from oxidize.cli.commands.import_git import cmd_import_git
 from oxidize.cli.commands.init import cmd_init
 from oxidize.cli.commands.log import cmd_log
 from oxidize.cli.commands.merge import cmd_merge
@@ -47,6 +48,7 @@ cli.add_command(cmd_resolve, "resolve")
 cli.add_command(cmd_stash, "stash")
 cli.add_command(cmd_bisect, "bisect")
 cli.add_command(cmd_hooks, "hooks")
+cli.add_command(cmd_import_git, "import-git")
 cli.add_command(cmd_blame, "blame")
 cli.add_command(cmd_notebook_diff, "notebook-diff")
 cli.add_command(cmd_remote, "remote")

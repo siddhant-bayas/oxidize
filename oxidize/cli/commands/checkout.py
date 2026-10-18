@@ -85,12 +85,17 @@ def _staged_or_untracked(repo: Repository) -> bool:
 def _write_tree(repo: Repository, tree: Tree, root: Path) -> None:
     root.mkdir(parents=True, exist_ok=True)
     for entry in tree:
-        if entry.mode.value != "040000":
+        target = root / entry.name
+        if entry.mode.value == "040000":
+            child_tree = repo.db.load_tree(entry.oid)
+            _write_tree(repo, child_tree, target)
+        else:
             try:
-                blob = repo.db.load_blob(entry.oid)
+                from oxidize import lfs
+
+                data = lfs.load_blob_data(repo, entry.oid)
             except KeyError:
                 logger.warning("missing blob %s, skipping %s", entry.oid, entry.name)
                 continue
-            target = root / entry.name
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(blob.data)
+            target.write_bytes(data)

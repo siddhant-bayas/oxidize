@@ -7,6 +7,7 @@ from rich.console import Console
 
 from oxidize.core.ignores import IgnoreMatcher
 from oxidize.core.repository import Repository, RepositoryNotFound
+from oxidize.objects.types import FileMode
 
 console = Console()
 
@@ -21,6 +22,16 @@ def _walk(root: Path, matcher: IgnoreMatcher) -> list[Path]:
         if p.is_file() and not matcher.is_ignored(rel):
             result.append(p)
     return result
+
+
+def _collect_tree(repo: Repository, tree_oid: str, prefix: str, out: dict[str, str]) -> None:
+    tree = repo.db.load_tree(tree_oid)
+    for te in tree:
+        path = f"{prefix}/{te.name}" if prefix else te.name
+        if te.mode == FileMode.DIRECTORY:
+            _collect_tree(repo, te.oid, path, out)
+        else:
+            out[path] = te.oid
 
 
 @click.command("status")
@@ -41,13 +52,11 @@ def cmd_status() -> None:
     indexed_paths = {ie.path for ie in repo.index.entries()}
     disk_files = _walk(repo.work_tree, repo.ignore_matcher)
 
-    head_tree_names: set[str] = set()
+    head_files: dict[str, str] = {}
     head = repo.refs.head()
     if head:
         commit = repo.db.load_commit(head)
-        tree = repo.db.load_tree(commit.tree_oid)
-        for tree_entry in tree:
-            head_tree_names.add(tree_entry.name)
+        _collect_tree(repo, commit.tree_oid, "", head_files)
 
     for file_path in disk_files:
         rel = file_path.relative_to(repo.work_tree).as_posix()
@@ -55,16 +64,12 @@ def cmd_status() -> None:
         if index_entry is not None:
             if index_entry.is_stale(file_path):
                 modified.append(rel)
-        elif rel in head_tree_names and head is not None:
-            blob = repo.db.load_blob(
-                next(
-                    te.oid
-                    for te in repo.db.load_tree(repo.db.load_commit(head).tree_oid)
-                    if te.name == rel
-                )
-            )
+        elif rel in head_files and head is not None:
+            from oxidize import lfs
+
+            stored_raw = lfs.load_blob_data(repo, head_files[rel])
             disk_content = file_path.read_text(errors="replace").replace("\r\n", "\n")
-            stored_content = blob.data.decode(errors="replace").replace("\r\n", "\n")
+            stored_content = stored_raw.decode(errors="replace").replace("\r\n", "\n")
             if disk_content != stored_content:
                 modified.append(rel)
         else:

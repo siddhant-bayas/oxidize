@@ -32,12 +32,14 @@ class Entity:
         return hashlib.sha256(content.encode()).hexdigest()
 
 
-def extract_entities(source: str) -> list[Entity]:
-    if HAS_TREE_SITTER:
-        result = _extract_tree_sitter(source)
-        if result is not None:
-            return result
-    return _extract_regex(source)
+def extract_entities(source: str, language: str = "python") -> list[Entity]:
+    if language == "python":
+        if HAS_TREE_SITTER:
+            result = _extract_tree_sitter(source)
+            if result is not None:
+                return result
+        return _extract_regex(source)
+    return _extract_generic(source, language)
 
 
 def _unwrap(node: Any) -> Any:
@@ -233,6 +235,65 @@ def _extract_body(lines: list[str], start: int, expected_indent: int) -> tuple[l
 
 def _is_indented(indent: int) -> bool:
     return indent > 0
+
+
+_GENERIC_FUNCTION_RE = None
+
+
+def _extract_generic(source: str, language: str = "javascript") -> list[Entity]:
+    entities: list[Entity] = []
+    lines = source.split("\n")
+    func_re = re.compile(r"(?:export\s+)?(?:async\s+)?function\s+(\w+)")
+    arrow_re = re.compile(r"(?:export\s+)?const\s+(\w+)\s*=\s*(?:async\s*)?\(")
+    class_re = re.compile(r"(?:export\s+)?class\s+(\w+)")
+
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+        m = func_re.search(stripped) or arrow_re.search(stripped)
+        if m and not stripped.startswith("//"):
+            name = m.group(1)
+            body_lines, end = _extract_body(lines, i + 1, len(line) - len(line.lstrip()) + 4)
+            body = "\n".join(body_lines)
+            h = hashlib.sha256(body.encode()).hexdigest()[:16]
+            entities.append(
+                Entity(
+                    name=name,
+                    qualified_name=name,
+                    entity_type=EntityType.FUNCTION,
+                    parent_class="",
+                    start_line=i + 1,
+                    end_line=end + 1,
+                    body_hash=h,
+                    source=body,
+                )
+            )
+            i = end + 1
+            continue
+        cm = class_re.search(stripped)
+        if cm:
+            name = cm.group(1)
+            body_lines, end = _extract_body(lines, i + 1, len(line) - len(line.lstrip()) + 4)
+            body = "\n".join(body_lines)
+            h = hashlib.sha256(body.encode()).hexdigest()[:16]
+            entities.append(
+                Entity(
+                    name=name,
+                    qualified_name=name,
+                    entity_type=EntityType.CLASS,
+                    parent_class="",
+                    start_line=i + 1,
+                    end_line=end + 1,
+                    body_hash=h,
+                    source=body,
+                )
+            )
+            i += 1
+            continue
+        i += 1
+    return entities
+
 
 
 @dataclass

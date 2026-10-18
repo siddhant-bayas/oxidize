@@ -23,7 +23,7 @@ class GitHubAPI:
 
     def _request(
         self, method: str, endpoint: str, data: dict[str, Any] | None = None
-    ) -> dict[str, Any] | None:
+    ) -> Any:
         url = f"{self.base_url}{endpoint}"
         body = json.dumps(data).encode() if data is not None else None
         req = urllib.request.Request(url, data=body, method=method)
@@ -112,3 +112,38 @@ class GitHubAPI:
     def update_ref(self, ref: str, sha: str, force: bool = False) -> None:
         endpoint = f"/git/refs/heads/{ref}"
         self._request("PATCH", endpoint, {"sha": sha, "force": force})
+
+
+    def get_repo(self) -> dict[str, Any]:
+        # base_url already points at /repos/owner/repo
+        result = self._request("GET", "")
+        assert isinstance(result, dict)
+        return result
+
+    def get_branches(self) -> list[dict[str, Any]]:
+        result = self._request("GET", "/branches")
+        assert isinstance(result, list)
+        return result
+
+    def get_commit(self, sha: str) -> dict[str, Any]:
+        result = self._request("GET", f"/git/commits/{sha}")
+        assert isinstance(result, dict)
+        return result
+
+    def get_tree(self, sha: str, recursive: bool = False) -> dict[str, Any]:
+        endpoint = f"/git/trees/{sha}"
+        if recursive:
+            endpoint += "?recursive=1"
+        result = self._request("GET", endpoint)
+        assert isinstance(result, dict)
+        return result
+
+    def get_blob(self, sha: str) -> bytes:
+        result = self._request("GET", f"/git/blobs/{sha}")
+        assert isinstance(result, dict)
+        import base64 as _b64
+
+        content = result.get("content", "")
+        if result.get("encoding") == "base64":
+            return _b64.b64decode(content)
+        return content.encode()  # type: ignore[no-any-return]

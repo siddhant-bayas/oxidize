@@ -13,9 +13,9 @@ class SemanticChange:
     detail: str
 
 
-def semantic_diff(old_source: str, new_source: str) -> list[SemanticChange]:
-    old_entities = EntitySnapshot(extract_entities(old_source))
-    new_entities = EntitySnapshot(extract_entities(new_source))
+def semantic_diff(old_source: str, new_source: str, language: str = "python") -> list[SemanticChange]:
+    old_entities = EntitySnapshot(extract_entities(old_source, language=language))
+    new_entities = EntitySnapshot(extract_entities(new_source, language=language))
 
     changes: list[SemanticChange] = []
 

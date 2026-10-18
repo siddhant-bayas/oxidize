@@ -30,14 +30,13 @@ def cmd_remote() -> None:
 def cmd_remote_clone(url: str, target: str) -> None:
     """Clone a filesystem remote into a target directory."""
     remote, kind = _make_remote(url)
-    if kind == "github":
-        raise click.ClickException(
-            "Clone from GitHub is not supported yet. "
-            "Use `git clone` or `oxidize remote push` to export."
-        )
-    assert isinstance(remote, Remote)
     try:
-        remote.clone(Path(target).resolve())
+        if kind == "github":
+            assert isinstance(remote, GitHubRemote)
+            remote.clone(Path(target).resolve())
+        else:
+            assert isinstance(remote, Remote)
+            remote.clone(Path(target).resolve())
     except TransferError as e:
         raise click.ClickException(str(e))
     click.echo(f"cloned {url} -> {target}")
@@ -67,10 +66,7 @@ def cmd_remote_push(url: str, branch: str | None, force: bool) -> None:
 @click.argument("branch", required=False, default=None)
 def cmd_remote_pull(url: str, branch: str | None) -> None:
     """Pull named branches from a remote."""
-    remote, kind = _make_remote(url)
-    if kind == "github":
-        raise click.ClickException("Pull from GitHub is not supported yet (push-only for v1).")
-    assert isinstance(remote, Remote)
+    remote, _kind = _make_remote(url)
     try:
         repo = Repository.discover()
     except RepositoryNotFound as e:
