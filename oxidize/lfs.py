@@ -32,11 +32,7 @@ def store(repo: Repository, data: bytes) -> tuple[str, str]:
     target.parent.mkdir(parents=True, exist_ok=True)
     if not target.exists():
         target.write_bytes(data)
-    pointer = (
-        "version https://oxidize.com/lfs/v1\n"
-        f"oid sha256:{content_hash}\n"
-        f"size {len(data)}\n"
-    )
+    pointer = f"version https://oxidize.com/lfs/v1\noid sha256:{content_hash}\nsize {len(data)}\n"
     oid = repo.db.store_blob(pointer.encode())
     return oid, content_hash
 

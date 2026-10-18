@@ -130,9 +130,7 @@ class GitHubRemote:
         commit_map[git_sha] = commit.oid
         return commit.oid
 
-    def _import_tree(
-        self, repo: Repository, git_tree_sha: str, cache: dict[str, str]
-    ) -> str:
+    def _import_tree(self, repo: Repository, git_tree_sha: str, cache: dict[str, str]) -> str:
         if git_tree_sha in cache:
             return cache[git_tree_sha]
 

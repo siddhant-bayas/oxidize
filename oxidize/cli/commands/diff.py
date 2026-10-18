@@ -49,7 +49,9 @@ def _diff_working(repo: Repository, paths: tuple[str, ...], semantic: bool = Fal
             new_text = disk.read_text(errors="replace").replace("\r\n", "\n")
             from oxidize import lfs
 
-            old_text = lfs.load_blob_data(repo, entry.oid).decode(errors="replace").replace("\r\n", "\n")
+            old_text = (
+                lfs.load_blob_data(repo, entry.oid).decode(errors="replace").replace("\r\n", "\n")
+            )
             if old_text == new_text:
                 continue
             _print_diff(rel, old_text, new_text, semantic)
@@ -152,7 +154,6 @@ def _resolve_paths(
                 result.add(rel)
         return result
     return set(indexed.keys())
-
 
 
 def _collect_head_files(repo: Repository, tree_oid: str, prefix: str, out: dict[str, str]) -> None:

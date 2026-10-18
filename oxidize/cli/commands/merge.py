@@ -102,14 +102,18 @@ def cmd_merge(branch: str, no_commit: bool) -> None:
             base_text = ""
             b_existed = False
 
-        if ours_path is not None and (ours_path in ours_paths or ours_path in ours_renames.values()):
+        if ours_path is not None and (
+            ours_path in ours_paths or ours_path in ours_renames.values()
+        ):
             ours_text = _text(ours_oid, ours_path)
             o_existed = True
         else:
             ours_text = None
             o_existed = False
 
-        if theirs_path is not None and (theirs_path in theirs_paths or theirs_path in theirs_renames.values()):
+        if theirs_path is not None and (
+            theirs_path in theirs_paths or theirs_path in theirs_renames.values()
+        ):
             theirs_text = _text(theirs_oid, theirs_path)
             t_existed = True
         else:

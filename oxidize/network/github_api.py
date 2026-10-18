@@ -21,9 +21,7 @@ class GitHubAPI:
         self.token = token
         self.base_url = f"https://api.github.com/repos/{owner}/{repo}"
 
-    def _request(
-        self, method: str, endpoint: str, data: dict[str, Any] | None = None
-    ) -> Any:
+    def _request(self, method: str, endpoint: str, data: dict[str, Any] | None = None) -> Any:
         url = f"{self.base_url}{endpoint}"
         body = json.dumps(data).encode() if data is not None else None
         req = urllib.request.Request(url, data=body, method=method)
@@ -112,7 +110,6 @@ class GitHubAPI:
     def update_ref(self, ref: str, sha: str, force: bool = False) -> None:
         endpoint = f"/git/refs/heads/{ref}"
         self._request("PATCH", endpoint, {"sha": sha, "force": force})
-
 
     def get_repo(self) -> dict[str, Any]:
         # base_url already points at /repos/owner/repo

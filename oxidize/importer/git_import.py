@@ -22,9 +22,7 @@ def _run_git(source: Path, *args: str) -> bytes:
     return result.stdout
 
 
-def _import_tree(
-    source: Path, git_tree_sha: str, repo: Repository, cache: dict[str, str]
-) -> str:
+def _import_tree(source: Path, git_tree_sha: str, repo: Repository, cache: dict[str, str]) -> str:
     if git_tree_sha in cache:
         return cache[git_tree_sha]
     out = _run_git(source, "ls-tree", git_tree_sha)

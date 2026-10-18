@@ -295,7 +295,6 @@ def _extract_generic(source: str, language: str = "javascript") -> list[Entity]:
     return entities
 
 
-
 @dataclass
 class EntitySnapshot:
     entities: list[Entity] = field(default_factory=list)
