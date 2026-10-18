@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 _BUILTIN_PATTERNS = (
     ".git/",
     ".oxidize/",
+    ".oxignore",
 )
 
 
