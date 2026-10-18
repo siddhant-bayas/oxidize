@@ -34,7 +34,9 @@ def git_repo(tmp_path: Path) -> Path:
 def test_import_git_cli(tmp_path: Path, git_repo: Path) -> None:
     target = tmp_path / "out"
     runner = CliRunner()
-    res = runner.invoke(cli, ["import-git", str(git_repo), "--target", str(target)], catch_exceptions=False)
+    res = runner.invoke(
+        cli, ["import-git", str(git_repo), "--target", str(target)], catch_exceptions=False
+    )
     assert res.exit_code == 0, res.output
     repo = Repository(target)
     assert len(repo.refs.list_branches()) >= 1
