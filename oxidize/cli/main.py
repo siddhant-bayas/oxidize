@@ -5,8 +5,10 @@ from oxidize.cli.commands.bisect import cmd_bisect
 from oxidize.cli.commands.blame import cmd_blame
 from oxidize.cli.commands.branch import cmd_branch
 from oxidize.cli.commands.checkout import cmd_checkout
+from oxidize.cli.commands.clone import cmd_clone, cmd_push
 from oxidize.cli.commands.commit import cmd_commit
 from oxidize.cli.commands.diff import cmd_diff
+from oxidize.cli.commands.export_git import cmd_export_git
 from oxidize.cli.commands.hooks import cmd_hooks
 from oxidize.cli.commands.ignores import cmd_ignores
 from oxidize.cli.commands.import_git import cmd_import_git
@@ -36,12 +38,15 @@ cli.add_command(cmd_status, "status")
 cli.add_command(cmd_commit, "commit")
 cli.add_command(cmd_log, "log")
 cli.add_command(cmd_diff, "diff")
+cli.add_command(cmd_export_git, "export-git")
 cli.add_command(cmd_show, "show")
 cli.add_command(cmd_scan, "scan")
 cli.add_command(cmd_undo, "undo")
 cli.add_command(cmd_ignores, "ignores")
 cli.add_command(cmd_branch, "branch")
 cli.add_command(cmd_checkout, "checkout")
+cli.add_command(cmd_clone, "clone")
+cli.add_command(cmd_push, "push")
 cli.add_command(cmd_tag, "tag")
 cli.add_command(cmd_merge, "merge")
 cli.add_command(cmd_resolve, "resolve")
