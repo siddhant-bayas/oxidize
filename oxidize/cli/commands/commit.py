@@ -8,43 +8,38 @@ import click
 from oxidize.core.repository import Repository, RepositoryNotFound
 from oxidize.objects.types import Author, Commit, FileMode, Tree, TreeEntry
 from oxidize.undo.reverser import UndoManager
+from oxidize.workflow.hooks import run_hooks
 
 
 def _build_tree(repo: Repository) -> Tree:
-    entries_by_dir: dict[str, list[tuple[str, str, FileMode]]] = defaultdict(list)
+    files: dict[str, list[TreeEntry]] = defaultdict(list)
+    dirs: dict[str, set[str]] = defaultdict(set)
     for entry in repo.index.entries():
         parts = entry.path.split("/")
-        if len(parts) == 1:
-            entries_by_dir[""].append((parts[0], entry.oid, FileMode(entry.mode)))
-        else:
-            dir_name = parts[0]
-            file_name = parts[-1]
-            entries_by_dir[dir_name].append((file_name, entry.oid, FileMode(entry.mode)))
+        te = TreeEntry(name=parts[-1], oid=entry.oid, mode=FileMode(entry.mode))
+        parent = "/".join(parts[:-1])
+        files[parent].append(te)
+        for i in range(1, len(parts)):
+            dirs["/".join(parts[: i - 1])].add(parts[i - 1])
 
-    subtrees: dict[str, str] = {}
-    for dir_name, dir_entries in entries_by_dir.items():
-        if dir_name and len(dir_entries) == 1 and dir_entries[0][0] == "__subtree__":
-            continue
-        if not dir_name:
-            continue
-        sub_tree = Tree()
-        for fname, foid, fmode in dir_entries:
-            sub_tree.add(TreeEntry(name=fname, oid=foid, mode=fmode))
-        repo.db.store_tree(sub_tree)
-        subtrees[dir_name] = sub_tree.oid
+    def build(dir_name: str) -> Tree:
+        tree = Tree()
+        for e in sorted(files.get(dir_name, []), key=lambda e: e.name):
+            tree.add(e)
+        for name in sorted(dirs.get(dir_name, set())):
+            child = build(f"{dir_name}/{name}" if dir_name else name)
+            tree.add(TreeEntry(name=name, oid=child.oid, mode=FileMode.DIRECTORY))
+            repo.db.store_tree(child)
+        return tree
 
-    root = Tree()
-    for fname, foid, fmode in entries_by_dir.get("", []):
-        root.add(TreeEntry(name=fname, oid=foid, mode=fmode))
-    for dir_name, subtree_oid in sorted(subtrees.items()):
-        root.add(TreeEntry(name=dir_name, oid=subtree_oid, mode=FileMode.DIRECTORY))
-    return root
+    return build("")
 
 
 @click.command("commit")
 @click.option("-m", "--message", required=True, help="Commit message")
 @click.option("--agent", default=None, help="Agent that produced this change (e.g. claude-code)")
-def cmd_commit(message: str, agent: str | None = None) -> None:
+@click.option("-n", "--no-verify", is_flag=True, help="Skip pre-commit and post-commit hooks")
+def cmd_commit(message: str, agent: str | None = None, no_verify: bool = False) -> None:
     """Record staged changes as a new commit."""
     try:
         repo = Repository.discover()
@@ -53,6 +48,12 @@ def cmd_commit(message: str, agent: str | None = None) -> None:
 
     if len(repo.index) == 0:
         raise click.ClickException("nothing staged -- use `oxidize add` first")
+
+    if not no_verify:
+        try:
+            run_hooks(repo, "pre-commit")
+        except RuntimeError as e:
+            raise click.ClickException(str(e))
 
     name = os.environ.get("OXIDE_AUTHOR_NAME") or repo.config.user_name
     email = os.environ.get("OXIDE_AUTHOR_EMAIL") or repo.config.user_email
@@ -81,6 +82,9 @@ def cmd_commit(message: str, agent: str | None = None) -> None:
 
     undo_mgr = UndoManager(repo)
     undo_mgr.record_commit(commit.oid, prev_head, message)
+
+    if not no_verify:
+        run_hooks(repo, "post-commit", blocking=False)
 
     short = commit.oid[:8]
     branch = repo.refs.current_branch() or "HEAD"

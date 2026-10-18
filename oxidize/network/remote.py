@@ -5,7 +5,7 @@ from functools import partial
 from pathlib import Path
 
 from oxidize.core.repository import Repository
-from oxidize.objects.types import FileMode
+from oxidize.objects.types import FileMode, Tree
 from oxidize.storage.backend import _atomic_write
 from oxidize.storage.database import ObjectDatabase
 
@@ -75,6 +75,7 @@ class Remote:
 
         head_text = (bare / "HEAD").read_text().strip()
         (repo.oxidize_dir / "HEAD").write_text(head_text + "\n")
+        _checkout_head(repo)
         return repo
 
     def push(
@@ -138,7 +139,44 @@ class Remote:
             local_ref.parent.mkdir(parents=True, exist_ok=True)
             local_ref.write_text(remote_oid + "\n")
             pulled.append(b)
+
+        current = repo.refs.current_branch()
+        if current and current in pulled:
+            _checkout_head(repo)
         return pulled
+
+
+def _checkout_head(repo: Repository) -> None:
+    head = repo.refs.head()
+    if not head:
+        return
+    try:
+        commit = repo.db.load_commit(head)
+        tree = repo.db.load_tree(commit.tree_oid)
+    except KeyError:
+        return
+    _write_tree(repo, tree, repo.work_tree)
+
+
+def _write_tree(repo: Repository, tree: Tree, root: Path) -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    for entry in tree:
+        target = root / entry.name
+        if entry.mode.value == "040000":
+            try:
+                subtree = repo.db.load_tree(entry.oid)
+            except KeyError:
+                continue
+            _write_tree(repo, subtree, target)
+        else:
+            try:
+                blob = repo.db.load_blob(entry.oid)
+            except KeyError:
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            from oxidize import lfs
+
+            target.write_bytes(lfs.resolve_data(repo, blob.data))
 
 
 def _copy_objects(

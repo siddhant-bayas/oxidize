@@ -25,7 +25,7 @@ class Blamer:
             if blob_text is None:
                 continue
             for line in blob_text.splitlines():
-                result.append((oid[:8], line))
+                result.append((oid, line))
         return result
 
     def _history(self) -> list[str]:

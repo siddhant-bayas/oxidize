@@ -8,6 +8,7 @@ from rich.console import Console
 from oxidize import lfs
 from oxidize.core.repository import Repository, RepositoryNotFound
 from oxidize.undo.reverser import UndoManager
+from oxidize.workflow.hooks import run_hooks
 
 console = Console()
 
@@ -23,6 +24,11 @@ def cmd_add(paths: tuple[str, ...], force: bool) -> None:
         raise click.ClickException(str(e))
 
     matcher = repo.ignore_matcher
+
+    try:
+        run_hooks(repo, "pre-add")
+    except RuntimeError as e:
+        raise click.ClickException(str(e))
 
     undo_mgr = UndoManager(repo)
     added_paths: list[str] = []
@@ -69,3 +75,4 @@ def cmd_add(paths: tuple[str, ...], force: bool) -> None:
 
     if added_paths:
         undo_mgr.record_add(added_paths, added_oids)
+        run_hooks(repo, "post-add", blocking=False)

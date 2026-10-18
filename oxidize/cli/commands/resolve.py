@@ -37,8 +37,10 @@ def cmd_resolve(
     if take_ours and take_theirs:
         raise click.ClickException("pick at most one of --ours / --theirs")
 
+    # no explicit paths: scan the tree (implies --all for side flags / interactive)
+    scan = resolve_all or not paths
     targets: list[Path] = []
-    if resolve_all:
+    if scan:
         for p in repo.work_tree.rglob("*"):
             if p.is_file() and p.suffix in {
                 ".txt",

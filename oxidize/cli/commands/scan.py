@@ -52,3 +52,5 @@ def cmd_scan(paths: tuple[str, ...], staged: bool, respect_ignore: bool) -> None
             f"  [yellow]{f['type']}[/] in [cyan]{f['file']}[/] line {f['line']}: {f['match']}"
         )
     console.print()
+
+    raise click.exceptions.Exit(1)

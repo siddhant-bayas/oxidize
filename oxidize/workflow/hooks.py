@@ -53,7 +53,17 @@ class Hooks:
         if existing is not None:
             return existing
         path = self._dir / f"{name}.sh"
-        path.write_text("#!/usr/bin/env sh\n# exit non-zero to block\n")
+        if name == "pre-commit":
+            body = (
+                "#!/usr/bin/env sh\n"
+                "# exit non-zero to block the commit\n"
+                "if command -v oxidize >/dev/null 2>&1; then\n"
+                "    oxidize scan --staged || exit 1\n"
+                "fi\n"
+            )
+        else:
+            body = "#!/usr/bin/env sh\n# exit non-zero to block\n"
+        path.write_text(body)
         try:
             path.chmod(0o755)
         except OSError:

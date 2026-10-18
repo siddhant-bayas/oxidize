@@ -5,10 +5,45 @@ from rich.console import Console
 
 from oxidize.core.repository import Repository, RepositoryNotFound
 from oxidize.merge.rename import detect_renames
-from oxidize.merge.text import three_way_text_merge
+from oxidize.merge.structured import three_way_merge as structured_three_way
+from oxidize.merge.text import TextMergeResult, three_way_text_merge
 from oxidize.merge.treewalk import _blob_text, _find_merge_base
+from oxidize.workflow.hooks import run_hooks
 
 console = Console()
+
+
+def _structured_attempt(rel: str, base: str, ours: str, theirs: str) -> str | None:
+    """Key-level structured merge for json/yaml/toml. Returns merged text, or None."""
+    import json
+    from collections.abc import Callable
+    from typing import Any
+
+    suffix = rel.rsplit(".", 1)[-1].lower() if "." in rel else ""
+    parser: Callable[[str], Any]
+    dumps: Callable[[dict[str, Any]], str]
+    if suffix == "json":
+        parser = json.loads
+        dumps = lambda d: json.dumps(d, indent=2) + "\n"
+    elif suffix in {"yml", "yaml"}:
+        try:
+            import yaml
+        except ModuleNotFoundError:
+            return None
+        parser = yaml.safe_load
+        dumps = lambda d: yaml.safe_dump(d, sort_keys=True)
+    else:
+        return None
+    try:
+        base_d, ours_d, theirs_d = parser(base), parser(ours), parser(theirs)
+    except Exception:
+        return None
+    if not all(isinstance(d, dict) for d in (base_d, ours_d, theirs_d)):
+        return None
+    merged, conflicts = structured_three_way(base_d, ours_d, theirs_d)
+    if conflicts:
+        return None  # fall back to text merge with markers
+    return dumps(merged)
 
 
 @click.command("merge")
@@ -26,6 +61,11 @@ def cmd_merge(branch: str, no_commit: bool) -> None:
     current = repo.refs.current_branch()
     if not current:
         raise click.ClickException("not on any branch; cannot merge")
+    try:
+        run_hooks(repo, "pre-merge")
+    except RuntimeError as e:
+        raise click.ClickException(str(e))
+
     ours_commit = repo.refs.read(f"refs/heads/{current}") or ""
     theirs_commit = repo.refs.read(branch) or repo.refs.read(f"refs/heads/{branch}")
     if not theirs_commit:
@@ -136,6 +176,11 @@ def cmd_merge(branch: str, no_commit: bool) -> None:
             continue
 
         result = three_way_text_merge(base_text or "", eff_ours_text or "", eff_theirs_text or "")
+        struct = _structured_attempt(
+            rel, base_text or "", eff_ours_text or "", eff_theirs_text or ""
+        )
+        if struct is not None:
+            result = TextMergeResult(merged=struct, conflicted=False)
 
         target = repo.work_tree / rel
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -165,6 +210,7 @@ def cmd_merge(branch: str, no_commit: bool) -> None:
             click.echo("resolve then `oxidize resolve` and `oxidize commit -m <msg>`")
         raise click.ClickException("merge stopped at conflicts")
 
+    run_hooks(repo, "post-merge", blocking=False)
     click.echo(f"merged {len(succeeded)} file(s) automatically ({auto_merged} clean)")
 
 

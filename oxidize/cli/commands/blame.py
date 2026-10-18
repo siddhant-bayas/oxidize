@@ -39,7 +39,7 @@ def cmd_blame(path: str) -> None:
     for oid, line in annotations:
         author = name.get(oid, "?")
         when = "?       "
-        console.print(f"{oid} {author:<10} {when} {line}")
+        console.print(f"{oid[:8]} {author:<10} {when} {line}")
 
 
 def _author_lookup(repo: Repository, oids: set[str]) -> dict[str, str]:
@@ -50,6 +50,5 @@ def _author_lookup(repo: Repository, oids: set[str]) -> dict[str, str]:
         except KeyError:
             logger.warning("missing commit %s, skipping author lookup", oid)
             continue
-        full = oid
-        out[full[:8]] = commit.author.name.split()[0]
+        out[oid] = commit.author.name.split()[0]
     return out
